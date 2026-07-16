@@ -1,0 +1,187 @@
+package services
+
+import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/0xatanda/shef-platform/internal/dto"
+	"github.com/0xatanda/shef-platform/internal/repositories"
+	"github.com/0xatanda/shef-platform/pkg/auth"
+)
+
+var (
+	ErrInvalidCredentials = errors.New("invalid email or password")
+	ErrInactiveAccount    = errors.New("account is inactive")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrInvalidToken       = errors.New("invalid refresh token")
+)
+
+type AuthService struct {
+	users     *repositories.UserRepository
+	refresh   *repositories.RefreshTokenRepository
+	jwtSecret string
+}
+
+func NewAuthService(
+	userRepo *repositories.UserRepository,
+	refreshRepo *repositories.RefreshTokenRepository,
+	jwtSecret string,
+) *AuthService {
+	return &AuthService{
+		users:     userRepo,
+		refresh:   refreshRepo,
+		jwtSecret: jwtSecret,
+	}
+}
+
+func (s *AuthService) Login(email, password string) (*dto.LoginResponse, error) {
+
+	user, err := s.users.FindByEmail(email)
+	if err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	if !user.IsActive {
+		return nil, ErrInactiveAccount
+	}
+
+	if !auth.VerifyPassword(user.PasswordHash, password) {
+		return nil, ErrInvalidCredentials
+	}
+
+	accessToken, err := auth.GenerateAccessToken(
+		s.jwtSecret,
+		user.ID.String(),
+		user.Email,
+		string(user.Role),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, hash, err := generateRefreshToken()
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.refresh.Create(
+		user.ID,
+		hash,
+		time.Now().Add(30*24*time.Hour),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	_ = s.users.UpdateLastLogin(user.ID)
+
+	return &dto.LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    900,
+		User: dto.UserResponse{
+			ID:        user.ID,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+			Role:      user.Role,
+		},
+	}, nil
+}
+
+func (s *AuthService) CurrentUser(id uuid.UUID) (*dto.UserResponse, error) {
+
+	user, err := s.users.FindByID(id)
+
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	return &dto.UserResponse{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Role:      user.Role,
+	}, nil
+}
+
+func (s *AuthService) Logout(refreshToken string) error {
+
+	hash := hashToken(refreshToken)
+
+	return s.refresh.Revoke(hash)
+}
+
+func (s *AuthService) Refresh(refreshToken string) (*dto.LoginResponse, error) {
+
+	hash := hashToken(refreshToken)
+
+	stored, err := s.refresh.Find(hash)
+
+	if err != nil {
+		return nil, ErrInvalidToken
+	}
+
+	if stored.Revoked || stored.ExpiresAt.Before(time.Now()) {
+		return nil, ErrInvalidToken
+	}
+
+	user, err := s.users.FindByID(stored.UserID)
+
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	accessToken, err := auth.GenerateAccessToken(
+		s.jwtSecret,
+		user.ID.String(),
+		user.Email,
+		string(user.Role),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    900,
+		User: dto.UserResponse{
+			ID:        user.ID,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+			Role:      user.Role,
+		},
+	}, nil
+}
+
+func generateRefreshToken() (string, string, error) {
+
+	bytes := make([]byte, 32)
+
+	if _, err := rand.Read(bytes); err != nil {
+		return "", "", err
+	}
+
+	token := hex.EncodeToString(bytes)
+
+	hash := hashToken(token)
+
+	return token, hash, nil
+}
+
+func hashToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
