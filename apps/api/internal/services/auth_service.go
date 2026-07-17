@@ -14,6 +14,8 @@ import (
 	"github.com/0xatanda/shef-platform/pkg/auth"
 )
 
+const AccessTokenTTL = 15 * time.Minute
+
 var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
 	ErrInactiveAccount    = errors.New("account is inactive")
@@ -22,20 +24,21 @@ var (
 )
 
 type AuthService struct {
-	users     *repositories.UserRepository
-	refresh   *repositories.RefreshTokenRepository
-	jwtSecret string
+	users   *repositories.UserRepository
+	refresh *repositories.RefreshTokenRepository
+	jwt     *auth.JWTService
 }
 
 func NewAuthService(
 	userRepo *repositories.UserRepository,
 	refreshRepo *repositories.RefreshTokenRepository,
-	jwtSecret string,
+	jwtService *auth.JWTService,
 ) *AuthService {
+
 	return &AuthService{
-		users:     userRepo,
-		refresh:   refreshRepo,
-		jwtSecret: jwtSecret,
+		users:   userRepo,
+		refresh: refreshRepo,
+		jwt:     jwtService,
 	}
 }
 
@@ -50,12 +53,14 @@ func (s *AuthService) Login(email, password string) (*dto.LoginResponse, error) 
 		return nil, ErrInactiveAccount
 	}
 
-	if !auth.VerifyPassword(user.PasswordHash, password) {
+	if !auth.VerifyPassword(
+		user.PasswordHash,
+		password,
+	) {
 		return nil, ErrInvalidCredentials
 	}
 
-	accessToken, err := auth.GenerateAccessToken(
-		s.jwtSecret,
+	accessToken, err := s.jwt.GenerateAccessToken(
 		user.ID.String(),
 		user.Email,
 		string(user.Role),
@@ -86,13 +91,13 @@ func (s *AuthService) Login(email, password string) (*dto.LoginResponse, error) 
 	return &dto.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		ExpiresIn:    900,
+		ExpiresIn:    int(AccessTokenTTL.Seconds()),
 		User: dto.UserResponse{
 			ID:        user.ID,
 			FirstName: user.FirstName,
 			LastName:  user.LastName,
 			Email:     user.Email,
-			Role:      user.Role,
+			Role:      string(user.Role),
 		},
 	}, nil
 }
@@ -110,7 +115,7 @@ func (s *AuthService) CurrentUser(id uuid.UUID) (*dto.UserResponse, error) {
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,
-		Role:      user.Role,
+		Role:      string(user.Role),
 	}, nil
 }
 
@@ -141,8 +146,7 @@ func (s *AuthService) Refresh(refreshToken string) (*dto.LoginResponse, error) {
 		return nil, ErrUserNotFound
 	}
 
-	accessToken, err := auth.GenerateAccessToken(
-		s.jwtSecret,
+	accessToken, err := s.jwt.GenerateAccessToken(
 		user.ID.String(),
 		user.Email,
 		string(user.Role),
@@ -155,13 +159,13 @@ func (s *AuthService) Refresh(refreshToken string) (*dto.LoginResponse, error) {
 	return &dto.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		ExpiresIn:    900,
+		ExpiresIn:    int(AccessTokenTTL.Seconds()),
 		User: dto.UserResponse{
 			ID:        user.ID,
 			FirstName: user.FirstName,
 			LastName:  user.LastName,
 			Email:     user.Email,
-			Role:      user.Role,
+			Role:      string(user.Role),
 		},
 	}, nil
 }

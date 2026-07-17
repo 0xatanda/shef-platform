@@ -3,37 +3,47 @@ package routes
 import (
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/0xatanda/shef-platform/configs"
 	"github.com/0xatanda/shef-platform/internal/handlers"
 	"github.com/0xatanda/shef-platform/internal/middleware"
 	"github.com/0xatanda/shef-platform/internal/repositories"
 	"github.com/0xatanda/shef-platform/internal/services"
+	"github.com/0xatanda/shef-platform/pkg/auth"
 )
 
 func RegisterAuthRoutes(api fiber.Router) {
 
-	userRepo := repositories.NewUserRepository()
+	cfg := configs.Load()
 
+	// Repositories
+	userRepo := repositories.NewUserRepository()
 	refreshRepo := repositories.NewRefreshTokenRepository()
 
+	// JWT Service
+	jwtService := auth.NewJWTService(cfg.JWTSecret)
+
+	// Auth Service
 	authService := services.NewAuthService(
 		userRepo,
 		refreshRepo,
-		"change-this-secret", // We'll replace this with config/viper later.
+		jwtService,
 	)
 
+	// Handler
 	authHandler := handlers.NewAuthHandler(authService)
 
-	auth := api.Group("/auth")
+	// Middleware
+	authMiddleware := middleware.NewAuthMiddleware(jwtService)
 
-	auth.Post("/login", authHandler.Login)
+	authGroup := api.Group("/auth")
 
-	auth.Post("/refresh", authHandler.Refresh)
+	authGroup.Post("/login", authHandler.Login)
+	authGroup.Post("/refresh", authHandler.Refresh)
+	authGroup.Post("/logout", authHandler.Logout)
 
-	auth.Post("/logout", authHandler.Logout)
-
-	auth.Get(
+	authGroup.Get(
 		"/me",
-		middleware.Auth(),
+		authMiddleware.Protect(),
 		authHandler.Me,
 	)
 }

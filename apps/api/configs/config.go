@@ -12,6 +12,10 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBName     string
+
+	JWTSecret     string
+	JWTAccessTTL  int
+	JWTRefreshTTL int
 }
 
 func Load() Config {
@@ -25,5 +29,9 @@ func Load() Config {
 		DBUser:     viper.GetString("DB_USER"),
 		DBPassword: viper.GetString("DB_PASSWORD"),
 		DBName:     viper.GetString("DB_NAME"),
+
+		JWTSecret:     viper.GetString("JWT_SECRET"),
+		JWTAccessTTL:  viper.GetInt("JWT_ACCESS_TTL"),
+		JWTRefreshTTL: viper.GetInt("JWT_REFRESH_TTL"),
 	}
 }

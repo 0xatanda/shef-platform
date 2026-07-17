@@ -1,14 +1,46 @@
 package middleware
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"strings"
 
-func Auth() fiber.Handler {
+	"github.com/gofiber/fiber/v2"
+
+	"github.com/0xatanda/shef-platform/pkg/auth"
+)
+
+type AuthMiddleware struct {
+	jwt *auth.JWTService
+}
+
+func NewAuthMiddleware(jwt *auth.JWTService) *AuthMiddleware {
+	return &AuthMiddleware{
+		jwt: jwt,
+	}
+}
+
+func (m *AuthMiddleware) Protect() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		// Temporary middleware.
-		// JWT validation will be added next.
+		header := c.Get("Authorization")
 
-		c.Locals("user_id", "")
+		if header == "" {
+			return fiber.ErrUnauthorized
+		}
+
+		parts := strings.Split(header, " ")
+
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			return fiber.ErrUnauthorized
+		}
+
+		claims, err := m.jwt.ValidateToken(parts[1])
+		if err != nil {
+			return fiber.ErrUnauthorized
+		}
+
+		c.Locals("user_id", claims.UserID)
+		c.Locals("email", claims.Email)
+		c.Locals("role", claims.Role)
 
 		return c.Next()
 	}

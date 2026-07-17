@@ -7,15 +7,15 @@ import (
 )
 
 type RefreshToken struct {
-	ID uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
+	ID uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 
-	UserID uuid.UUID `gorm:"type:uuid;not null"`
+	UserID uuid.UUID `gorm:"type:uuid;not null;index"`
 
-	Token string `gorm:"type:text;not null"`
+	Token string `gorm:"type:text;not null;uniqueIndex"`
 
-	ExpiresAt time.Time
+	ExpiresAt time.Time `gorm:"not null"`
 
-	Revoked bool
+	Revoked bool `gorm:"default:false"`
 
 	CreatedAt time.Time
 }
