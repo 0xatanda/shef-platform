@@ -28,6 +28,12 @@ func main() {
 
 	log.Println("✅ Database connected")
 
+	if err := database.Migrate(cfg); err != nil {
+		log.Fatalf("migration failed: %v", err)
+	}
+
+	log.Println("✅ Database migrated")
+
 	// Create Fiber app
 	server := app.New()
 
