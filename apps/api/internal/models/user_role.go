@@ -3,6 +3,8 @@ package models
 type UserRole string
 
 const (
-	RoleAdmin  UserRole = "admin"
-	RoleEditor UserRole = "editor"
+	RoleSuperAdmin UserRole = "super_admin"
+	RoleAdmin      UserRole = "admin"
+	RoleEditor     UserRole = "editor"
+	RoleUser       UserRole = "user"
 )

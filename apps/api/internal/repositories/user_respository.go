@@ -1,11 +1,11 @@
 package repositories
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"github.com/0xatanda/shef-platform/internal/models"
-	"github.com/0xatanda/shef-platform/pkg/database"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -14,23 +14,26 @@ type UserRepository struct {
 	db *gorm.DB
 }
 
-func NewUserRepository() *UserRepository {
+func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{
-		db: database.DB,
+		db: db,
 	}
 }
 
 // Create a new user
-func (r *UserRepository) Create(user *models.User) error {
-	return r.db.Create(user).Error
+func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
+	return r.db.WithContext(ctx).Create(user).Error
 }
 
 // Find user by ID
-func (r *UserRepository) FindByID(id uuid.UUID) (*models.User, error) {
+func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	var user models.User
 
-	err := r.db.First(&user, "id = ?", id).Error
+	err := r.db.WithContext(ctx).First(&user, "id = ?", id).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
 		return nil, err
 	}
 
@@ -38,16 +41,14 @@ func (r *UserRepository) FindByID(id uuid.UUID) (*models.User, error) {
 }
 
 // Find user by email
-func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
+func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
 
 	err := r.db.Where("email = ?", email).First(&user).Error
-
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
+			return nil, gorm.ErrRecordNotFound
 		}
-
 		return nil, err
 	}
 
@@ -55,70 +56,73 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 }
 
 // Update user
-func (r *UserRepository) Update(user *models.User) error {
-	return r.db.Save(user).Error
+func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
+	return r.db.WithContext(ctx).Save(user).Error
 }
 
 // Delete user (soft delete)
-func (r *UserRepository) Delete(id uuid.UUID) error {
-	return r.db.Delete(&models.User{}, "id = ?", id).Error
+func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&models.User{}, "id = ?", id).Error
 }
 
 // Update last login
-func (r *UserRepository) UpdateLastLogin(id uuid.UUID) error {
+func (r *UserRepository) UpdateLastLogin(ctx context.Context, id uuid.UUID) error {
 	now := time.Now()
 
-	return r.db.Model(&models.User{}).
+	return r.db.WithContext(ctx).Model(&models.User{}).
 		Where("id = ?", id).
 		Update("last_login", now).Error
 }
 
 // Activate user
-func (r *UserRepository) Activate(id uuid.UUID) error {
-	return r.db.Model(&models.User{}).
+func (r *UserRepository) Activate(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Model(&models.User{}).
 		Where("id = ?", id).
-		Update("is_active", true).Error
+		Updates(map[string]any{
+			"is_active": true,
+		}).Error
 }
 
 // Deactivate user
-func (r *UserRepository) Deactivate(id uuid.UUID) error {
-	return r.db.Model(&models.User{}).
+func (r *UserRepository) Deactivate(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Model(&models.User{}).
 		Where("id = ?", id).
 		Update("is_active", false).Error
 }
 
 // Verify email
-func (r *UserRepository) VerifyEmail(id uuid.UUID) error {
+func (r *UserRepository) VerifyEmail(ctx context.Context, id uuid.UUID) error {
 	return r.db.Model(&models.User{}).
 		Where("id = ?", id).
 		Update("email_verified", true).Error
 }
 
 // Update password
-func (r *UserRepository) UpdatePassword(id uuid.UUID, passwordHash string) error {
-	return r.db.Model(&models.User{}).
+func (r *UserRepository) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	return r.db.WithContext(ctx).Model(&models.User{}).
 		Where("id = ?", id).
 		Update("password_hash", passwordHash).Error
 }
 
 // List users with pagination
-func (r *UserRepository) List(limit, offset int) ([]models.User, error) {
+func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]models.User, error) {
 	var users []models.User
 
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Limit(limit).
 		Offset(offset).
 		Order("created_at DESC").
+		Order("id DESC").
 		Find(&users).Error
 
 	return users, err
 }
 
 // Count users
-func (r *UserRepository) Count() (int64, error) {
+func (r *UserRepository) Count(ctx context.Context) (int64, error) {
 	var count int64
 
-	err := r.db.Model(&models.User{}).Count(&count).Error
+	err := r.db.WithContext(ctx).Model(&models.User{}).Count(&count).Error
 
 	return count, err
 }

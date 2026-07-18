@@ -24,6 +24,7 @@ func NewAuthHandler(service *services.AuthService) *AuthHandler {
 	}
 }
 
+// POST /auth/login
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var req validators.LoginRequest
 
@@ -45,7 +46,11 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		)
 	}
 
-	res, err := h.service.Login(req.Email, req.Password)
+	res, err := h.service.Login(
+		c.UserContext(),
+		req.Email,
+		req.Password,
+	)
 	if err != nil {
 		return response.Error(
 			c,
@@ -58,6 +63,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	return response.Success(c, "Login successful", res)
 }
 
+// POST /auth/refresh
 func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 	var req validators.RefreshTokenRequest
 
@@ -79,7 +85,10 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 		)
 	}
 
-	token, err := h.service.Refresh(req.RefreshToken)
+	res, err := h.service.Refresh(
+		c.UserContext(),
+		req.RefreshToken,
+	)
 	if err != nil {
 		return response.Error(
 			c,
@@ -89,9 +98,10 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 		)
 	}
 
-	return response.Success(c, "Token refreshed", token)
+	return response.Success(c, "Token refreshed", res)
 }
 
+// POST /auth/logout
 func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 	var req validators.RefreshTokenRequest
 
@@ -113,7 +123,10 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 		)
 	}
 
-	if err := h.service.Logout(req.RefreshToken); err != nil {
+	if err := h.service.Logout(
+		c.UserContext(),
+		req.RefreshToken,
+	); err != nil {
 		return response.Error(
 			c,
 			fiber.StatusBadRequest,
@@ -125,6 +138,7 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 	return response.Success(c, "Logout successful", nil)
 }
 
+// GET /auth/me
 func (h *AuthHandler) Me(c *fiber.Ctx) error {
 
 	value := c.Locals("user_id")
@@ -157,7 +171,10 @@ func (h *AuthHandler) Me(c *fiber.Ctx) error {
 		)
 	}
 
-	user, err := h.service.CurrentUser(id)
+	user, err := h.service.CurrentUser(
+		c.UserContext(),
+		id,
+	)
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
 			return response.Error(

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
@@ -42,9 +43,9 @@ func NewAuthService(
 	}
 }
 
-func (s *AuthService) Login(email, password string) (*dto.LoginResponse, error) {
+func (s *AuthService) Login(ctx context.Context, email, password string) (*dto.LoginResponse, error) {
 
-	user, err := s.users.FindByEmail(email)
+	user, err := s.users.FindByEmail(ctx, email)
 	if err != nil {
 		return nil, ErrInvalidCredentials
 	}
@@ -77,6 +78,7 @@ func (s *AuthService) Login(email, password string) (*dto.LoginResponse, error) 
 	}
 
 	err = s.refresh.Create(
+		ctx,
 		user.ID,
 		hash,
 		time.Now().Add(30*24*time.Hour),
@@ -86,7 +88,7 @@ func (s *AuthService) Login(email, password string) (*dto.LoginResponse, error) 
 		return nil, err
 	}
 
-	_ = s.users.UpdateLastLogin(user.ID)
+	_ = s.users.UpdateLastLogin(ctx, user.ID)
 
 	return &dto.LoginResponse{
 		AccessToken:  accessToken,
@@ -102,9 +104,9 @@ func (s *AuthService) Login(email, password string) (*dto.LoginResponse, error) 
 	}, nil
 }
 
-func (s *AuthService) CurrentUser(id uuid.UUID) (*dto.UserResponse, error) {
+func (s *AuthService) CurrentUser(ctx context.Context, id uuid.UUID) (*dto.UserResponse, error) {
 
-	user, err := s.users.FindByID(id)
+	user, err := s.users.FindByID(ctx, id)
 
 	if err != nil {
 		return nil, ErrUserNotFound
@@ -119,18 +121,18 @@ func (s *AuthService) CurrentUser(id uuid.UUID) (*dto.UserResponse, error) {
 	}, nil
 }
 
-func (s *AuthService) Logout(refreshToken string) error {
+func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
 
 	hash := hashToken(refreshToken)
 
-	return s.refresh.Revoke(hash)
+	return s.refresh.Revoke(ctx, hash)
 }
 
-func (s *AuthService) Refresh(refreshToken string) (*dto.LoginResponse, error) {
+func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (*dto.LoginResponse, error) {
 
 	hash := hashToken(refreshToken)
 
-	stored, err := s.refresh.Find(hash)
+	stored, err := s.refresh.Find(ctx, hash)
 
 	if err != nil {
 		return nil, ErrInvalidToken
@@ -140,7 +142,7 @@ func (s *AuthService) Refresh(refreshToken string) (*dto.LoginResponse, error) {
 		return nil, ErrInvalidToken
 	}
 
-	user, err := s.users.FindByID(stored.UserID)
+	user, err := s.users.FindByID(ctx, stored.UserID)
 
 	if err != nil {
 		return nil, ErrUserNotFound

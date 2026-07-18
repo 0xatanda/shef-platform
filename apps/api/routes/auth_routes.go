@@ -9,15 +9,18 @@ import (
 	"github.com/0xatanda/shef-platform/internal/repositories"
 	"github.com/0xatanda/shef-platform/internal/services"
 	"github.com/0xatanda/shef-platform/pkg/auth"
+	"github.com/0xatanda/shef-platform/pkg/database"
 )
 
 func RegisterAuthRoutes(api fiber.Router) {
 
 	cfg := configs.Load()
 
+	db := database.DB
+
 	// Repositories
-	userRepo := repositories.NewUserRepository()
-	refreshRepo := repositories.NewRefreshTokenRepository()
+	userRepo := repositories.NewUserRepository(db)
+	refreshRepo := repositories.NewRefreshTokenRepository(db)
 
 	// JWT Service
 	jwtService := auth.NewJWTService(cfg.JWTSecret)

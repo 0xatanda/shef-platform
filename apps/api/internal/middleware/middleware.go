@@ -13,8 +13,9 @@ func Register(app *fiber.App) {
 
 	app.Use(requestid.New())
 
-	app.Use(recover.New())
-
+	app.Use(recover.New(recover.Config{
+		EnableStackTrace: true,
+	}))
 	app.Use(fiberLogger.New())
 
 	app.Use(cors.New())

@@ -1,67 +1,71 @@
 package repositories
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	"github.com/0xatanda/shef-platform/internal/models"
-	"github.com/0xatanda/shef-platform/pkg/database"
 )
 
 type RefreshTokenRepository struct {
 	db *gorm.DB
 }
 
-func NewRefreshTokenRepository() *RefreshTokenRepository {
+func NewRefreshTokenRepository(db *gorm.DB) *RefreshTokenRepository {
 	return &RefreshTokenRepository{
-		db: database.DB,
+		db: db,
 	}
 }
 
-// Save a refresh token
 func (r *RefreshTokenRepository) Create(
+	ctx context.Context,
 	userID uuid.UUID,
-	tokenHash string,
+	token string,
 	expiresAt time.Time,
 ) error {
 
-	token := models.RefreshToken{
+	refresh := models.RefreshToken{
 		UserID:    userID,
-		Token:     tokenHash,
+		Token:     token,
 		ExpiresAt: expiresAt,
 		Revoked:   false,
 	}
 
-	return r.db.Create(&token).Error
+	return r.db.WithContext(ctx).
+		Create(&refresh).
+		Error
 }
 
-// Find refresh token
 func (r *RefreshTokenRepository) Find(
-	tokenHash string,
+	ctx context.Context,
+	token string,
 ) (*models.RefreshToken, error) {
 
-	var token models.RefreshToken
+	var refresh models.RefreshToken
 
-	err := r.db.
-		Where("token = ?", tokenHash).
-		First(&token).Error
+	err := r.db.WithContext(ctx).
+		Where("token = ?", token).
+		First(&refresh).
+		Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &token, nil
+	return &refresh, nil
 }
 
-// Revoke refresh token
 func (r *RefreshTokenRepository) Revoke(
-	tokenHash string,
+	ctx context.Context,
+	token string,
 ) error {
 
-	return r.db.
+	return r.db.WithContext(ctx).
 		Model(&models.RefreshToken{}).
-		Where("token = ?", tokenHash).
-		Update("revoked", true).Error
+		Where("token = ?", token).
+		Update("revoked", true).
+		Error
 }
