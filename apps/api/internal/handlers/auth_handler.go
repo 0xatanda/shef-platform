@@ -24,6 +24,19 @@ func NewAuthHandler(service *services.AuthService) *AuthHandler {
 	}
 }
 
+// GET /admin/dashboard
+func (h *AuthHandler) AdminDashboard(c *fiber.Ctx) error {
+	return response.Success(
+		c,
+		"Welcome Super Admin",
+		fiber.Map{
+			"user_id": c.Locals("user_id"),
+			"email":   c.Locals("email"),
+			"role":    c.Locals("role"),
+		},
+	)
+}
+
 // POST /auth/login
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var req validators.LoginRequest

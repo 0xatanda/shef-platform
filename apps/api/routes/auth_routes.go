@@ -49,4 +49,15 @@ func RegisterAuthRoutes(api fiber.Router) {
 		authMiddleware.Protect(),
 		authHandler.Me,
 	)
+
+	admin := api.Group(
+		"/admin",
+		authMiddleware.Protect(),
+		middleware.RequireRoles("super_admin"),
+	)
+
+	admin.Get(
+		"/dashboard",
+		authHandler.AdminDashboard,
+	)
 }
