@@ -74,25 +74,9 @@ func (r *UserRepository) UpdateLastLogin(ctx context.Context, id uuid.UUID) erro
 		Update("last_login", now).Error
 }
 
-// Activate user
-func (r *UserRepository) Activate(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Model(&models.User{}).
-		Where("id = ?", id).
-		Updates(map[string]any{
-			"is_active": true,
-		}).Error
-}
-
-// Deactivate user
-func (r *UserRepository) Deactivate(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Model(&models.User{}).
-		Where("id = ?", id).
-		Update("is_active", false).Error
-}
-
 // Verify email
 func (r *UserRepository) VerifyEmail(ctx context.Context, id uuid.UUID) error {
-	return r.db.Model(&models.User{}).
+	return r.db.WithContext(ctx).Model(&models.User{}).
 		Where("id = ?", id).
 		Update("email_verified", true).Error
 }
@@ -105,24 +89,44 @@ func (r *UserRepository) UpdatePassword(ctx context.Context, id uuid.UUID, passw
 }
 
 // List users with pagination
-func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]models.User, error) {
-	var users []models.User
+func (r *UserRepository) List(
+	ctx context.Context,
+	page,
+	limit int,
+) ([]models.User, int64, error) {
 
-	err := r.db.WithContext(ctx).
+	var (
+		users []models.User
+		total int64
+	)
+
+	offset := (page - 1) * limit
+
+	if err := r.db.WithContext(ctx).
+		Model(&models.User{}).
+		Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := r.db.WithContext(ctx).
 		Limit(limit).
 		Offset(offset).
 		Order("created_at DESC").
-		Order("id DESC").
-		Find(&users).Error
+		Find(&users).Error; err != nil {
+		return nil, 0, err
+	}
 
-	return users, err
+	return users, total, nil
 }
 
-// Count users
-func (r *UserRepository) Count(ctx context.Context) (int64, error) {
-	var count int64
-
-	err := r.db.WithContext(ctx).Model(&models.User{}).Count(&count).Error
-
-	return count, err
+func (r *UserRepository) ChangeStatus(
+	ctx context.Context,
+	id uuid.UUID,
+	active bool,
+) error {
+	return r.db.WithContext(ctx).
+		Model(&models.User{}).
+		Where("id = ?", id).
+		Update("is_active", active).
+		Error
 }

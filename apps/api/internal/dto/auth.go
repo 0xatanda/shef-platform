@@ -10,9 +10,11 @@ type LoginResponse struct {
 }
 
 type UserResponse struct {
-	ID        uuid.UUID `json:"id"`
-	FirstName string    `json:"first_name"`
-	LastName  string    `json:"last_name"`
-	Email     string    `json:"email"`
-	Role      string    `json:"role"`
+	ID            uuid.UUID `json:"id"`
+	FirstName     string    `json:"first_name"`
+	LastName      string    `json:"last_name"`
+	Email         string    `json:"email"`
+	Role          string    `json:"role"`
+	IsActive      bool      `json:"is_active"`
+	EmailVerified bool      `json:"email_verified"`
 }

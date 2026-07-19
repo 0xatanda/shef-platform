@@ -6,7 +6,10 @@ import (
 	"github.com/0xatanda/shef-platform/configs"
 	"github.com/0xatanda/shef-platform/internal/handlers"
 	"github.com/0xatanda/shef-platform/internal/middleware"
+	"github.com/0xatanda/shef-platform/internal/repositories"
+	"github.com/0xatanda/shef-platform/internal/services"
 	"github.com/0xatanda/shef-platform/pkg/auth"
+	"github.com/0xatanda/shef-platform/pkg/database"
 )
 
 func RegisterAdminRoutes(api fiber.Router) {
@@ -19,7 +22,11 @@ func RegisterAdminRoutes(api fiber.Router) {
 	authMiddleware := middleware.NewAuthMiddleware(jwtService)
 
 	// Handler
-	adminHandler := handlers.NewAdminHandler()
+	userRepo := repositories.NewUserRepository(database.DB)
+
+	adminService := services.NewAdminService(userRepo)
+
+	adminHandler := handlers.NewAdminHandler(adminService)
 
 	admin := api.Group(
 		"/admin",
@@ -27,15 +34,14 @@ func RegisterAdminRoutes(api fiber.Router) {
 		middleware.RequireRoles("super_admin"),
 	)
 
-	// Dashboard
 	admin.Get("/dashboard", adminHandler.Dashboard)
+	admin.Get("/users", adminHandler.ListUsers)
+	admin.Get("/users/:id", adminHandler.GetUser)
 
 	// ----------------------------------------------------------------
 	// User Management (Coming Next)
 	// ----------------------------------------------------------------
 
-	// admin.Get("/users", adminHandler.ListUsers)
-	// admin.Get("/users/:id", adminHandler.GetUser)
 	// admin.Post("/users", adminHandler.CreateUser)
 	// admin.Put("/users/:id", adminHandler.UpdateUser)
 	// admin.Patch("/users/:id/status", adminHandler.ChangeStatus)

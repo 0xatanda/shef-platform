@@ -18,7 +18,8 @@ type Container struct {
 	RefreshTokenRepo *repositories.RefreshTokenRepository
 
 	// services
-	AuthService *services.AuthService
+	AuthService  *services.AuthService
+	AdminService *services.AdminService
 
 	// handlers
 	AuthHandler  *handlers.AuthHandler
@@ -48,9 +49,11 @@ func NewContainer() *Container {
 		jwt,
 	)
 
+	adminService := services.NewAdminService(userRepo)
+
 	// handlers
 	authHandler := handlers.NewAuthHandler(authService)
-	adminHandler := handlers.NewAdminHandler()
+	adminHandler := handlers.NewAdminHandler(adminService)
 
 	// middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
