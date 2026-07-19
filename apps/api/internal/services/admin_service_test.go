@@ -12,10 +12,11 @@ import (
 )
 
 type mockUserRepository struct {
-	users []models.User
-	user  *models.User
-	total int64
-	err   error
+	users  []models.User
+	user   *models.User
+	total  int64
+	exists bool
+	err    error
 }
 
 func (m *mockUserRepository) List(
@@ -173,4 +174,11 @@ func TestGetUserNotFound(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, user)
+}
+
+func (m *mockUserRepository) ExistsByEmail(
+	ctx context.Context,
+	email string,
+) (bool, error) {
+	return m.exists, m.err
 }

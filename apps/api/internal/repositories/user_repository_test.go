@@ -12,7 +12,7 @@ import (
 var testDB *gorm.DB
 
 func TestMain(m *testing.M) {
-	testDB = helpers.SetupTestDB(&testing.T{})
+	testDB = helpers.SetupTestDB()
 
 	code := m.Run()
 

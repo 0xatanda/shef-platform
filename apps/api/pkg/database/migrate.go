@@ -22,7 +22,7 @@ func Migrate(cfg *configs.Config) error {
 	)
 
 	m, err := migrate.New(
-		"file://migrations",
+		"file://../../migrations",
 		dsn,
 	)
 

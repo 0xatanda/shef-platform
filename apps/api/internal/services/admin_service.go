@@ -2,8 +2,11 @@ package services
 
 import (
 	"context"
+	"errors"
 
 	"github.com/0xatanda/shef-platform/internal/dto"
+	"github.com/0xatanda/shef-platform/internal/models"
+	"github.com/0xatanda/shef-platform/pkg/auth"
 	"github.com/google/uuid"
 )
 
@@ -61,6 +64,56 @@ func (s *AdminService) GetUser(
 
 	user, err := s.users.FindByID(ctx, id)
 	if err != nil {
+		return nil, err
+	}
+
+	return &dto.UserResponse{
+		ID:            user.ID,
+		FirstName:     user.FirstName,
+		LastName:      user.LastName,
+		Email:         user.Email,
+		Role:          string(user.Role),
+		IsActive:      user.IsActive,
+		EmailVerified: user.EmailVerified,
+	}, nil
+}
+
+func (s *AdminService) CreateUser(
+	ctx context.Context,
+	req dto.CreateUserRequest,
+) (*dto.UserResponse, error) {
+
+	// Check if email already exists
+	exists, err := s.users.ExistsByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	if exists {
+		return nil, errors.New("user already exists")
+	}
+
+	passwordHash, err := auth.HashPassword(req.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	role := models.UserRole(req.Role)
+
+	if !role.IsValid() {
+		return nil, errors.New("invalid role")
+	}
+
+	user := &models.User{
+		FirstName:    req.FirstName,
+		LastName:     req.LastName,
+		Email:        req.Email,
+		PasswordHash: passwordHash,
+		Role:         role,
+		IsActive:     true,
+	}
+
+	if err := s.users.Create(ctx, user); err != nil {
 		return nil, err
 	}
 

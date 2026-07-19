@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
+	"github.com/0xatanda/shef-platform/internal/dto"
 	"github.com/0xatanda/shef-platform/internal/services"
 	"github.com/0xatanda/shef-platform/internal/validators"
 	"github.com/0xatanda/shef-platform/pkg/response"
@@ -106,6 +107,41 @@ func (h *AdminHandler) GetUser(c *fiber.Ctx) error {
 	return response.Success(
 		c,
 		"User retrieved successfully",
+		user,
+	)
+}
+
+func (h *AdminHandler) CreateUser(c *fiber.Ctx) error {
+
+	var req dto.CreateUserRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Invalid request body",
+			nil,
+		)
+	}
+
+	user, err := h.service.CreateUser(
+		c.UserContext(),
+		req,
+	)
+
+	if err != nil {
+
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"User created successfully",
 		user,
 	)
 }

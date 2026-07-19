@@ -130,3 +130,22 @@ func (r *UserRepository) ChangeStatus(
 		Update("is_active", active).
 		Error
 }
+
+func (r *UserRepository) ExistsByEmail(
+	ctx context.Context,
+	email string,
+) (bool, error) {
+
+	var count int64
+
+	err := r.db.WithContext(ctx).
+		Model(&models.User{}).
+		Where("email = ?", email).
+		Count(&count).Error
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
