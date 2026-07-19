@@ -6,12 +6,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 
 	"github.com/0xatanda/shef-platform/internal/models"
 )
 
 type mockUserRepository struct {
 	users []models.User
+	user  *models.User
 	total int64
 	err   error
 }
@@ -28,8 +30,15 @@ func (m *mockUserRepository) FindByEmail(context.Context, string) (*models.User,
 	return nil, nil
 }
 
-func (m *mockUserRepository) FindByID(context.Context, uuid.UUID) (*models.User, error) {
-	return nil, nil
+func (m *mockUserRepository) FindByID(
+	ctx context.Context,
+	id uuid.UUID,
+) (*models.User, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+
+	return m.user, nil
 }
 
 func (m *mockUserRepository) UpdateLastLogin(context.Context, uuid.UUID) error {
@@ -121,4 +130,47 @@ func TestListUsersRepositoryError(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, res)
+}
+func TestGetUser(t *testing.T) {
+
+	id := uuid.New()
+
+	repo := &mockUserRepository{
+		user: &models.User{
+			ID:        id,
+			FirstName: "John",
+			LastName:  "Doe",
+			Email:     "john@test.com",
+			Role:      models.RoleAdmin,
+		},
+	}
+
+	service := NewAdminService(repo)
+
+	user, err := service.GetUser(
+		context.Background(),
+		id,
+	)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+	assert.Equal(t, "John", user.FirstName)
+	assert.Equal(t, "john@test.com", user.Email)
+}
+
+func TestGetUserNotFound(t *testing.T) {
+
+	repo := &mockUserRepository{
+		err: gorm.ErrRecordNotFound,
+	}
+
+	service := NewAdminService(repo)
+
+	user, err := service.GetUser(
+		context.Background(),
+		uuid.New(),
+	)
+
+	assert.Error(t, err)
+	assert.Nil(t, user)
 }
