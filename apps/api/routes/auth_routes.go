@@ -16,48 +16,30 @@ func RegisterAuthRoutes(api fiber.Router) {
 
 	cfg := configs.Load()
 
-	db := database.DB
+	userRepo := repositories.NewUserRepository(database.DB)
+	refreshRepo := repositories.NewRefreshTokenRepository(database.DB)
 
-	// Repositories
-	userRepo := repositories.NewUserRepository(db)
-	refreshRepo := repositories.NewRefreshTokenRepository(db)
-
-	// JWT Service
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 
-	// Auth Service
 	authService := services.NewAuthService(
 		userRepo,
 		refreshRepo,
 		jwtService,
 	)
 
-	// Handler
 	authHandler := handlers.NewAuthHandler(authService)
 
-	// Middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService)
 
-	authGroup := api.Group("/auth")
+	auth := api.Group("/auth")
 
-	authGroup.Post("/login", authHandler.Login)
-	authGroup.Post("/refresh", authHandler.Refresh)
-	authGroup.Post("/logout", authHandler.Logout)
+	auth.Post("/login", authHandler.Login)
+	auth.Post("/refresh", authHandler.Refresh)
+	auth.Post("/logout", authHandler.Logout)
 
-	authGroup.Get(
+	auth.Get(
 		"/me",
 		authMiddleware.Protect(),
 		authHandler.Me,
-	)
-
-	admin := api.Group(
-		"/admin",
-		authMiddleware.Protect(),
-		middleware.RequireRoles("super_admin"),
-	)
-
-	admin.Get(
-		"/dashboard",
-		authHandler.AdminDashboard,
 	)
 }

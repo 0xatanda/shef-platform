@@ -37,7 +37,7 @@ func main() {
 	// Create Fiber app
 	server := app.New()
 
-	log.Printf("🚀 %s running on :%s", cfg.AppName, cfg.Port)
+	log.Printf("🚀 %s running on :%s", cfg.AppName, cfg.AppPort)
 
-	log.Fatal(server.Listen(":" + cfg.Port))
+	log.Fatal(server.Listen(":" + cfg.AppPort))
 }

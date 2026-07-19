@@ -4,23 +4,22 @@ import (
 	"log"
 
 	"github.com/joho/godotenv"
-	"github.com/spf13/viper"
 )
 
 func LoadEnv() {
-	_ = godotenv.Load()
+	paths := []string{
+		".env",
+		"../.env",
+		"../../.env",
+		"../../../.env",
+	}
 
-	viper.AutomaticEnv()
+	for _, p := range paths {
+		if err := godotenv.Load(p); err == nil {
+			log.Printf("Environment loaded from %s", p)
+			return
+		}
+	}
 
-	viper.SetDefault("APP_NAME", "SHEF Digital Platform")
-	viper.SetDefault("APP_ENV", "development")
-	viper.SetDefault("API_PORT", "8080")
-
-	viper.SetDefault("DB_HOST", "localhost")
-	viper.SetDefault("DB_PORT", "5432")
-	viper.SetDefault("DB_USER", "macintosh")
-	viper.SetDefault("DB_PASSWORD", "postgres")
-	viper.SetDefault("DB_NAME", "shef")
-
-	log.Println("Environment loaded")
+	log.Println("No .env file found, using system environment variables")
 }

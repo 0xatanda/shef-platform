@@ -1,37 +1,45 @@
 package configs
 
-import "github.com/spf13/viper"
+import (
+	"os"
+)
 
 type Config struct {
 	AppName string
 	AppEnv  string
-	Port    string
+	AppPort string
 
 	DBHost     string
 	DBPort     string
 	DBUser     string
 	DBPassword string
 	DBName     string
+	DBSSLMode  string
 
-	JWTSecret     string
-	JWTAccessTTL  int
-	JWTRefreshTTL int
+	JWTSecret string
 }
 
-func Load() Config {
-	return Config{
-		AppName: viper.GetString("APP_NAME"),
-		AppEnv:  viper.GetString("APP_ENV"),
-		Port:    viper.GetString("API_PORT"),
+func Load() *Config {
+	return &Config{
+		AppName: getEnv("APP_NAME", "SHEF Digital Platform"),
+		AppEnv:  getEnv("APP_ENV", "development"),
+		AppPort: getEnv("APP_PORT", "8080"),
 
-		DBHost:     viper.GetString("DB_HOST"),
-		DBPort:     viper.GetString("DB_PORT"),
-		DBUser:     viper.GetString("DB_USER"),
-		DBPassword: viper.GetString("DB_PASSWORD"),
-		DBName:     viper.GetString("DB_NAME"),
+		DBHost:     getEnv("DB_HOST", "localhost"),
+		DBPort:     getEnv("DB_PORT", "5432"),
+		DBUser:     getEnv("DB_USER", "macintosh"),
+		DBPassword: getEnv("DB_PASSWORD", ""),
+		DBName:     getEnv("DB_NAME", "shef"),
+		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
 
-		JWTSecret:     viper.GetString("JWT_SECRET"),
-		JWTAccessTTL:  viper.GetInt("JWT_ACCESS_TTL"),
-		JWTRefreshTTL: viper.GetInt("JWT_REFRESH_TTL"),
+		JWTSecret: getEnv("JWT_SECRET", ""),
 	}
+}
+
+func getEnv(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+
+	return fallback
 }

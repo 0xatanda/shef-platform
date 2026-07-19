@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -15,6 +16,8 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 	configs.LoadEnv()
 
 	cfg := configs.Load()
+
+	fmt.Printf("CONFIG: %+v\n", *cfg)
 
 	if err := database.Connect(cfg); err != nil {
 		t.Fatalf("failed connecting test db: %v", err)
