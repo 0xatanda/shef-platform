@@ -218,3 +218,30 @@ func (h *AdminHandler) ChangeStatus(c *fiber.Ctx) error {
 		user,
 	)
 }
+
+func (h *AdminHandler) DeleteUser(c *fiber.Ctx) error {
+
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return response.BadRequest(c, "Invalid user ID")
+	}
+
+	err = h.service.DeleteUser(
+		c.Context(),
+		id,
+	)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"User deleted successfully",
+		nil,
+	)
+}

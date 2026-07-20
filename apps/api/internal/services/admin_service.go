@@ -188,3 +188,16 @@ func (s *AdminService) ChangeStatus(
 		EmailVerified: user.EmailVerified,
 	}, nil
 }
+
+func (s *AdminService) DeleteUser(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
+
+	_, err := s.users.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return s.users.Delete(ctx, id)
+}
