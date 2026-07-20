@@ -2,6 +2,8 @@ package database
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/0xatanda/shef-platform/configs"
 
@@ -21,11 +23,20 @@ func Migrate(cfg *configs.Config) error {
 		cfg.DBName,
 	)
 
+	wd, _ := os.Getwd()
+
+	migrationPath := filepath.Join(wd, "migrations")
+
+	if _, err := os.Stat(migrationPath); os.IsNotExist(err) {
+		migrationPath = filepath.Join(wd, "../../migrations")
+	}
+
+	source := "file://" + migrationPath
+
 	m, err := migrate.New(
-		"file://../../migrations",
+		source,
 		dsn,
 	)
-
 	if err != nil {
 		return err
 	}

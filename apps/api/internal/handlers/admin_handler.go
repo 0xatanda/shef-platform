@@ -145,3 +145,47 @@ func (h *AdminHandler) CreateUser(c *fiber.Ctx) error {
 		user,
 	)
 }
+
+func (h *AdminHandler) UpdateUser(c *fiber.Ctx) error {
+
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Invalid user ID",
+			nil,
+		)
+	}
+
+	var req dto.UpdateUserRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Invalid request body",
+			nil,
+		)
+	}
+
+	user, err := h.service.UpdateUser(
+		c.UserContext(),
+		id,
+		req,
+	)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusInternalServerError,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"User updated successfully",
+		user,
+	)
+}

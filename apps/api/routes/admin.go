@@ -38,11 +38,11 @@ func RegisterAdminRoutes(api fiber.Router) {
 	admin.Get("/users", adminHandler.ListUsers)
 	admin.Get("/users/:id", adminHandler.GetUser)
 	admin.Post("/users", adminHandler.CreateUser)
+	admin.Put("/users/:id", adminHandler.UpdateUser)
 	// ----------------------------------------------------------------
 	// User Management (Coming Next)
 	// ----------------------------------------------------------------
 
-	// admin.Put("/users/:id", adminHandler.UpdateUser)
 	// admin.Patch("/users/:id/status", adminHandler.ChangeStatus)
 	// admin.Delete("/users/:id", adminHandler.DeleteUser)
 }

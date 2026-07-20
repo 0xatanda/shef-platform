@@ -127,3 +127,36 @@ func (s *AdminService) CreateUser(
 		EmailVerified: user.EmailVerified,
 	}, nil
 }
+
+func (s *AdminService) UpdateUser(
+	ctx context.Context,
+	id uuid.UUID,
+	req dto.UpdateUserRequest,
+) (*dto.UserResponse, error) {
+
+	user, err := s.users.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	user.FirstName = req.FirstName
+	user.LastName = req.LastName
+
+	if req.Role != "" {
+		user.Role = models.UserRole(req.Role)
+	}
+
+	if err := s.users.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	return &dto.UserResponse{
+		ID:            user.ID,
+		FirstName:     user.FirstName,
+		LastName:      user.LastName,
+		Email:         user.Email,
+		Role:          string(user.Role),
+		IsActive:      user.IsActive,
+		EmailVerified: user.EmailVerified,
+	}, nil
+}

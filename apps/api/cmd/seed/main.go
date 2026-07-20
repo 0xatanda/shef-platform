@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/0xatanda/shef-platform/configs"
@@ -9,6 +10,7 @@ import (
 	"github.com/0xatanda/shef-platform/internal/repositories"
 	"github.com/0xatanda/shef-platform/pkg/auth"
 	"github.com/0xatanda/shef-platform/pkg/database"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -23,13 +25,18 @@ func main() {
 
 	userRepo := repositories.NewUserRepository(database.DB)
 
+	// Check if admin already exists
 	_, err := userRepo.FindByEmail(ctx, "admin@shef.org")
 	if err == nil {
-		log.Println("Admin already exists")
+		log.Println("✅ Admin already exists")
 		return
 	}
 
-	password, err := auth.HashPassword("admin123")
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Fatal(err)
+	}
+
+	passwordHash, err := auth.HashPassword("admin123")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,8 +45,8 @@ func main() {
 		FirstName:     "System",
 		LastName:      "Administrator",
 		Email:         "admin@shef.org",
-		PasswordHash:  password,
-		Role:          models.RoleAdmin,
+		PasswordHash:  passwordHash,
+		Role:          models.RoleSuperAdmin,
 		IsActive:      true,
 		EmailVerified: true,
 	}
@@ -48,5 +55,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println("✅ Admin created")
+	log.Println("✅ Admin user created successfully")
 }
