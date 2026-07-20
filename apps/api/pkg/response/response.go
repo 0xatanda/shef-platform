@@ -24,3 +24,57 @@ func Error(c *fiber.Ctx, status int, message string, errors interface{}) error {
 		Errors:  errors,
 	})
 }
+
+func BadRequest(c *fiber.Ctx, message string) error {
+	return Error(
+		c,
+		fiber.StatusBadRequest,
+		message,
+		nil,
+	)
+}
+
+func Unauthorized(c *fiber.Ctx, message string) error {
+	return Error(
+		c,
+		fiber.StatusUnauthorized,
+		message,
+		nil,
+	)
+}
+
+func Forbidden(c *fiber.Ctx, message string) error {
+	return Error(
+		c,
+		fiber.StatusForbidden,
+		message,
+		nil,
+	)
+}
+
+func NotFound(c *fiber.Ctx, message string) error {
+	return Error(
+		c,
+		fiber.StatusNotFound,
+		message,
+		nil,
+	)
+}
+
+func Conflict(c *fiber.Ctx, message string) error {
+	return Error(
+		c,
+		fiber.StatusConflict,
+		message,
+		nil,
+	)
+}
+
+func InternalServerError(c *fiber.Ctx, message string) error {
+	return Error(
+		c,
+		fiber.StatusInternalServerError,
+		message,
+		nil,
+	)
+}

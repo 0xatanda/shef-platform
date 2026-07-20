@@ -160,3 +160,31 @@ func (s *AdminService) UpdateUser(
 		EmailVerified: user.EmailVerified,
 	}, nil
 }
+
+func (s *AdminService) ChangeStatus(
+	ctx context.Context,
+	id uuid.UUID,
+	active bool,
+) (*dto.UserResponse, error) {
+
+	user, err := s.users.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.users.ChangeStatus(ctx, id, active); err != nil {
+		return nil, err
+	}
+
+	user.IsActive = active
+
+	return &dto.UserResponse{
+		ID:            user.ID,
+		FirstName:     user.FirstName,
+		LastName:      user.LastName,
+		Email:         user.Email,
+		Role:          string(user.Role),
+		IsActive:      user.IsActive,
+		EmailVerified: user.EmailVerified,
+	}, nil
+}

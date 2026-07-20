@@ -189,3 +189,32 @@ func (h *AdminHandler) UpdateUser(c *fiber.Ctx) error {
 		user,
 	)
 }
+
+func (h *AdminHandler) ChangeStatus(c *fiber.Ctx) error {
+
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return response.BadRequest(c, "Invalid user ID")
+	}
+
+	var req dto.ChangeUserStatusRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Invalid request body")
+	}
+
+	user, err := h.service.ChangeStatus(
+		c.Context(),
+		id,
+		req.IsActive,
+	)
+	if err != nil {
+		return response.BadRequest(c, err.Error())
+	}
+
+	return response.Success(
+		c,
+		"User status updated successfully",
+		user,
+	)
+}

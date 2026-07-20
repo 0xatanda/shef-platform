@@ -36,3 +36,7 @@ type UserListResponse struct {
 	Limit int            `json:"limit"`
 	Total int64          `json:"total"`
 }
+
+type ChangeUserStatusRequest struct {
+	IsActive bool `json:"is_active"`
+}
