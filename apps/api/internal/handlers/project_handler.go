@@ -128,3 +128,38 @@ func (h *ProjectHandler) GetProject(c *fiber.Ctx) error {
 		project,
 	)
 }
+
+func (h *ProjectHandler) UpdateProject(c *fiber.Ctx) error {
+
+	var req dto.UpdateProjectRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Invalid request body",
+			nil,
+		)
+	}
+
+	project, err := h.service.UpdateProject(
+		c.Context(),
+		c.Params("id"),
+		req,
+	)
+
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"Project updated successfully",
+		project,
+	)
+}

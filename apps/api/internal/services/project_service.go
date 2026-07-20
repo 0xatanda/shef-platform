@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/0xatanda/shef-platform/internal/dto"
 	"github.com/0xatanda/shef-platform/internal/models"
@@ -178,6 +179,69 @@ func (s *ProjectService) GetProject(
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("project not found")
 		}
+		return nil, err
+	}
+
+	return &dto.ProjectResponse{
+		ID:            project.ID.String(),
+		Title:         project.Title,
+		Slug:          project.Slug,
+		Summary:       project.Summary,
+		Content:       project.Content,
+		FeaturedImage: project.FeaturedImage,
+		Status:        string(project.Status),
+		PublishedAt:   project.PublishedAt,
+		CreatedAt:     project.CreatedAt,
+		UpdatedAt:     project.UpdatedAt,
+	}, nil
+}
+
+func (s *ProjectService) UpdateProject(
+	ctx context.Context,
+	id string,
+	req dto.UpdateProjectRequest,
+) (*dto.ProjectResponse, error) {
+	projectID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, errors.New("invalid project id")
+	}
+
+	project, err := s.projects.FindByID(ctx, projectID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("project not found")
+		}
+		return nil, err
+	}
+
+	if project.Title != req.Title {
+
+		slug := utils.GenerateSlug(req.Title)
+
+		exists, err := s.projects.ExistsBySlug(ctx, slug)
+		if err != nil {
+			return nil, err
+		}
+
+		if exists {
+			return nil, errors.New("project title already exists")
+		}
+
+		project.Title = req.Title
+		project.Slug = slug
+	}
+
+	project.Summary = req.Summary
+	project.Content = req.Content
+	project.FeaturedImage = req.FeaturedImage
+	project.Status = models.ProjectStatus(req.Status)
+
+	if req.Status == "published" && project.PublishedAt == nil {
+		now := time.Now()
+		project.PublishedAt = &now
+	}
+
+	if err := s.projects.Update(ctx, project); err != nil {
 		return nil, err
 	}
 
