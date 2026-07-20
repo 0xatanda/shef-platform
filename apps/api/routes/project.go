@@ -41,4 +41,5 @@ func RegisterProjectRoutes(api fiber.Router) {
 	)
 
 	admin.Post("/", projectHandler.CreateProject)
+	admin.Get("/", projectHandler.ListProjects)
 }

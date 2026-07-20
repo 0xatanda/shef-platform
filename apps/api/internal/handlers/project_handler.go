@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
@@ -71,5 +73,36 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 		c,
 		"Project created successfully",
 		project,
+	)
+}
+
+func (h *ProjectHandler) ListProjects(c *fiber.Ctx) error {
+
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+
+	search := c.Query("search")
+	status := c.Query("status")
+
+	projects, err := h.service.ListProjects(
+		c.Context(),
+		page,
+		limit,
+		search,
+		status,
+	)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusInternalServerError,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"Projects retrieved successfully",
+		projects,
 	)
 }

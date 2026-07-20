@@ -27,5 +27,5 @@ type ProjectRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*models.Project, error)
 	FindBySlug(ctx context.Context, slug string) (*models.Project, error)
 	ExistsBySlug(ctx context.Context, slug string) (bool, error)
-	List(ctx context.Context, page, limit int) ([]models.Project, int64, error)
+	List(ctx context.Context, page int, limit int, search string, status string) ([]models.Project, int64, error)
 }

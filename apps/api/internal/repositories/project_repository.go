@@ -107,34 +107,40 @@ func (r *ProjectRepository) ExistsBySlug(
 
 func (r *ProjectRepository) List(
 	ctx context.Context,
-	page,
+	page int,
 	limit int,
+	search string,
+	status string,
 ) ([]models.Project, int64, error) {
 
-	var (
-		projects []models.Project
-		total    int64
-	)
+	var projects []models.Project
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&models.Project{})
+
+	if search != "" {
+		query = query.Where(
+			"title ILIKE ? OR summary ILIKE ?",
+			"%"+search+"%",
+			"%"+search+"%",
+		)
+	}
+
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
 
 	offset := (page - 1) * limit
 
-	if err := r.db.WithContext(ctx).
-		Model(&models.Project{}).
-		Count(&total).
-		Error; err != nil {
-		return nil, 0, err
-	}
-
-	err := r.db.WithContext(ctx).
+	err := query.
+		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).
-		Order("created_at DESC").
-		Find(&projects).
-		Error
+		Find(&projects).Error
 
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return projects, total, nil
+	return projects, total, err
 }

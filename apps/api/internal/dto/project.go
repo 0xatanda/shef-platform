@@ -42,8 +42,6 @@ type ProjectListItem struct {
 }
 
 type ProjectListResponse struct {
-	Items []ProjectListItem `json:"items"`
-	Page  int               `json:"page"`
-	Limit int               `json:"limit"`
-	Total int64             `json:"total"`
+	Items      []ProjectListItem `json:"items"`
+	Pagination Pagination        `json:"pagination"`
 }

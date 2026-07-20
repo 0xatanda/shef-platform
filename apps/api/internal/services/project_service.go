@@ -106,3 +106,57 @@ func (s *ProjectService) CreateProject(
 		UpdatedAt:     project.UpdatedAt,
 	}, nil
 }
+
+func (s *ProjectService) ListProjects(
+	ctx context.Context,
+	page int,
+	limit int,
+	search string,
+	status string,
+) (*dto.ProjectListResponse, error) {
+
+	if page <= 0 {
+		page = 1
+	}
+
+	if limit <= 0 {
+		limit = 10
+	}
+
+	projects, total, err := s.projects.List(
+		ctx,
+		page,
+		limit,
+		search,
+		status,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]dto.ProjectListItem, 0, len(projects))
+
+	for _, p := range projects {
+		items = append(items, dto.ProjectListItem{
+			ID:            p.ID.String(),
+			Title:         p.Title,
+			Slug:          p.Slug,
+			Summary:       p.Summary,
+			FeaturedImage: p.FeaturedImage,
+			Status:        string(p.Status),
+			PublishedAt:   p.PublishedAt,
+		})
+	}
+
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+
+	return &dto.ProjectListResponse{
+		Items: items,
+		Pagination: dto.Pagination{
+			Page:       page,
+			Limit:      limit,
+			Total:      total,
+			TotalPages: totalPages,
+		},
+	}, nil
+}
