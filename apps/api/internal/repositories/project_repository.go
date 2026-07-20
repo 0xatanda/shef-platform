@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"errors"
 
 	"github.com/0xatanda/shef-platform/internal/models"
 	"github.com/google/uuid"
@@ -46,24 +47,6 @@ func (r *ProjectRepository) Delete(
 	return r.db.WithContext(ctx).
 		Delete(&models.Project{}, id).
 		Error
-}
-
-func (r *ProjectRepository) FindByID(
-	ctx context.Context,
-	id uuid.UUID,
-) (*models.Project, error) {
-
-	var project models.Project
-
-	err := r.db.WithContext(ctx).
-		First(&project, "id = ?", id).
-		Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &project, nil
 }
 
 func (r *ProjectRepository) FindBySlug(
@@ -143,4 +126,28 @@ func (r *ProjectRepository) List(
 		Find(&projects).Error
 
 	return projects, total, err
+}
+
+func (r *ProjectRepository) FindByID(
+	ctx context.Context,
+	id uuid.UUID,
+) (*models.Project, error) {
+
+	var project models.Project
+
+	err := r.db.
+		WithContext(ctx).
+		Where("id = ?", id).
+		First(&project).
+		Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+
+		return nil, err
+	}
+
+	return &project, nil
 }

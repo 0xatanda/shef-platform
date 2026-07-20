@@ -24,8 +24,11 @@ type ProjectRepository interface {
 	Create(ctx context.Context, project *models.Project) error
 	Update(ctx context.Context, project *models.Project) error
 	Delete(ctx context.Context, id uuid.UUID) error
+
 	FindByID(ctx context.Context, id uuid.UUID) (*models.Project, error)
 	FindBySlug(ctx context.Context, slug string) (*models.Project, error)
+
 	ExistsBySlug(ctx context.Context, slug string) (bool, error)
-	List(ctx context.Context, page int, limit int, search string, status string) ([]models.Project, int64, error)
+
+	List(ctx context.Context, page, limit int, search, status string) ([]models.Project, int64, error)
 }

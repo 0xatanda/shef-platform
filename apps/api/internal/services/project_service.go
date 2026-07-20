@@ -2,12 +2,14 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/0xatanda/shef-platform/internal/dto"
 	"github.com/0xatanda/shef-platform/internal/models"
 	"github.com/0xatanda/shef-platform/pkg/utils"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type ProjectService struct {
@@ -158,5 +160,37 @@ func (s *ProjectService) ListProjects(
 			Total:      total,
 			TotalPages: totalPages,
 		},
+	}, nil
+}
+
+func (s *ProjectService) GetProject(
+	ctx context.Context,
+	id string,
+) (*dto.ProjectResponse, error) {
+
+	projectID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, errors.New("invalid project id")
+	}
+
+	project, err := s.projects.FindByID(ctx, projectID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("project not found")
+		}
+		return nil, err
+	}
+
+	return &dto.ProjectResponse{
+		ID:            project.ID.String(),
+		Title:         project.Title,
+		Slug:          project.Slug,
+		Summary:       project.Summary,
+		Content:       project.Content,
+		FeaturedImage: project.FeaturedImage,
+		Status:        string(project.Status),
+		PublishedAt:   project.PublishedAt,
+		CreatedAt:     project.CreatedAt,
+		UpdatedAt:     project.UpdatedAt,
 	}, nil
 }

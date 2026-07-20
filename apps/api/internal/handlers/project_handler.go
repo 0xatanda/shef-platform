@@ -106,3 +106,25 @@ func (h *ProjectHandler) ListProjects(c *fiber.Ctx) error {
 		projects,
 	)
 }
+
+func (h *ProjectHandler) GetProject(c *fiber.Ctx) error {
+
+	project, err := h.service.GetProject(
+		c.Context(),
+		c.Params("id"),
+	)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusNotFound,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"Project retrieved successfully",
+		project,
+	)
+}
