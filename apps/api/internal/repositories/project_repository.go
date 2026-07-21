@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/0xatanda/shef-platform/internal/models"
 	"github.com/google/uuid"
@@ -34,9 +35,13 @@ func (r *ProjectRepository) Update(
 	project *models.Project,
 ) error {
 
-	return r.db.WithContext(ctx).
-		Save(project).
-		Error
+	result := r.db.
+		WithContext(ctx).
+		Save(project)
+
+	log.Printf("Rows affected: %d\n", result.RowsAffected)
+
+	return result.Error
 }
 
 func (r *ProjectRepository) Delete(
@@ -150,4 +155,118 @@ func (r *ProjectRepository) FindByID(
 	}
 
 	return &project, nil
+}
+
+func (r *ProjectRepository) Restore(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
+
+	return r.db.
+		WithContext(ctx).
+		Unscoped().
+		Model(&models.Project{}).
+		Where("id = ?", id).
+		Update("deleted_at", nil).
+		Error
+}
+
+func (r *ProjectRepository) PermanentDelete(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
+
+	return r.db.
+		WithContext(ctx).
+		Unscoped().
+		Delete(&models.Project{}, "id = ?", id).
+		Error
+}
+
+func (r *ProjectRepository) ListDeleted(
+	ctx context.Context,
+	page int,
+	limit int,
+	search string,
+) ([]models.Project, int64, error) {
+
+	var projects []models.Project
+	var total int64
+
+	query := r.db.
+		WithContext(ctx).
+		Unscoped().
+		Model(&models.Project{}).
+		Where("deleted_at IS NOT NULL")
+
+	if search != "" {
+		query = query.Where(
+			"title ILIKE ?",
+			"%"+search+"%",
+		)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := query.
+		Offset((page - 1) * limit).
+		Limit(limit).
+		Order("deleted_at DESC").
+		Find(&projects).
+		Error
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return projects, total, nil
+}
+
+func (r *ProjectRepository) FindDeletedByID(
+	ctx context.Context,
+	id uuid.UUID,
+) (*models.Project, error) {
+
+	var project models.Project
+
+	err := r.db.
+		WithContext(ctx).
+		Unscoped().
+		Where("id = ? AND deleted_at IS NOT NULL", id).
+		First(&project).
+		Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+
+		return nil, err
+	}
+
+	return &project, nil
+}
+
+func (r *ProjectRepository) ExistsBySlugExceptID(
+	ctx context.Context,
+	slug string,
+	id uuid.UUID,
+) (bool, error) {
+
+	var count int64
+
+	err := r.db.
+		WithContext(ctx).
+		Model(&models.Project{}).
+		Where("slug = ? AND id <> ?", slug, id).
+		Count(&count).
+		Error
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }

@@ -29,6 +29,10 @@ type ProjectRepository interface {
 	FindBySlug(ctx context.Context, slug string) (*models.Project, error)
 
 	ExistsBySlug(ctx context.Context, slug string) (bool, error)
-
+	ExistsBySlugExceptID(ctx context.Context, slug string, id uuid.UUID) (bool, error)
+	Restore(ctx context.Context, id uuid.UUID) error
+	PermanentDelete(ctx context.Context, id uuid.UUID) error
+	FindDeletedByID(ctx context.Context, id uuid.UUID) (*models.Project, error)
+	ListDeleted(ctx context.Context, page int, limit int, search string) ([]models.Project, int64, error)
 	List(ctx context.Context, page, limit int, search, status string) ([]models.Project, int64, error)
 }

@@ -28,6 +28,8 @@ type Project struct {
 
 	UpdatedBy uuid.UUID `gorm:"type:uuid"`
 
+	PublishedBy *uuid.UUID `gorm:"type:uuid"`
+
 	CreatedAt time.Time
 
 	UpdatedAt time.Time

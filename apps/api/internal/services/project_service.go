@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/0xatanda/shef-platform/internal/dto"
@@ -199,8 +200,10 @@ func (s *ProjectService) GetProject(
 func (s *ProjectService) UpdateProject(
 	ctx context.Context,
 	id string,
+	userID uuid.UUID,
 	req dto.UpdateProjectRequest,
 ) (*dto.ProjectResponse, error) {
+
 	projectID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, errors.New("invalid project id")
@@ -214,11 +217,16 @@ func (s *ProjectService) UpdateProject(
 		return nil, err
 	}
 
+	// Update slug if title changes
 	if project.Title != req.Title {
 
 		slug := utils.GenerateSlug(req.Title)
 
-		exists, err := s.projects.ExistsBySlug(ctx, slug)
+		exists, err := s.projects.ExistsBySlugExceptID(
+			ctx,
+			slug,
+			project.ID,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -236,9 +244,14 @@ func (s *ProjectService) UpdateProject(
 	project.FeaturedImage = req.FeaturedImage
 	project.Status = models.ProjectStatus(req.Status)
 
-	if req.Status == "published" && project.PublishedAt == nil {
+	// Audit
+	project.UpdatedBy = userID
+
+	// Only set PublishedAt and PublishedBy the first time it is published
+	if project.Status == models.ProjectPublished && project.PublishedAt == nil {
 		now := time.Now()
 		project.PublishedAt = &now
+		project.PublishedBy = &userID
 	}
 
 	if err := s.projects.Update(ctx, project); err != nil {
@@ -256,5 +269,108 @@ func (s *ProjectService) UpdateProject(
 		PublishedAt:   project.PublishedAt,
 		CreatedAt:     project.CreatedAt,
 		UpdatedAt:     project.UpdatedAt,
+	}, nil
+}
+
+func (s *ProjectService) DeleteProject(
+	ctx context.Context,
+	id string,
+) error {
+
+	projectID, err := uuid.Parse(id)
+	if err != nil {
+		return errors.New("invalid project id")
+	}
+
+	_, err = s.projects.FindByID(ctx, projectID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("project not found")
+		}
+		return err
+	}
+
+	return s.projects.Delete(ctx, projectID)
+}
+
+func (s *ProjectService) RestoreProject(
+	ctx context.Context,
+	id string,
+) error {
+
+	projectID, err := uuid.Parse(id)
+	if err != nil {
+		return errors.New("invalid project id")
+	}
+
+	return s.projects.Restore(ctx, projectID)
+}
+
+func (s *ProjectService) PermanentDeleteProject(
+	ctx context.Context,
+	id string,
+) error {
+
+	projectID, err := uuid.Parse(id)
+	if err != nil {
+		return errors.New("invalid project id")
+	}
+
+	_, err = s.projects.FindDeletedByID(ctx, projectID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("project not found or not deleted")
+		}
+
+		return err
+	}
+
+	return s.projects.PermanentDelete(ctx, projectID)
+}
+
+func (s *ProjectService) ListDeletedProjects(
+	ctx context.Context,
+	page int,
+	limit int,
+	search string,
+) (*dto.ProjectListResponse, error) {
+
+	projects, total, err := s.projects.ListDeleted(
+		ctx,
+		page,
+		limit,
+		search,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]dto.ProjectListItem, 0, len(projects))
+
+	for _, p := range projects {
+		items = append(items, dto.ProjectListItem{
+			ID:            p.ID.String(),
+			Title:         p.Title,
+			Slug:          p.Slug,
+			Summary:       p.Summary,
+			FeaturedImage: p.FeaturedImage,
+			Status:        string(p.Status),
+			PublishedAt:   p.PublishedAt,
+		})
+	}
+
+	totalPages := 0
+	if limit > 0 {
+		totalPages = int(math.Ceil(float64(total) / float64(limit)))
+	}
+
+	return &dto.ProjectListResponse{
+		Items: items,
+		Pagination: dto.Pagination{
+			Page:       page,
+			Limit:      limit,
+			Total:      total,
+			TotalPages: totalPages,
+		},
 	}, nil
 }

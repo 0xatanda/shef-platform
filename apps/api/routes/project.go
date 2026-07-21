@@ -41,7 +41,17 @@ func RegisterProjectRoutes(api fiber.Router) {
 	)
 
 	admin.Post("/", projectHandler.CreateProject)
+
 	admin.Get("/", projectHandler.ListProjects)
+	admin.Get("/deleted", projectHandler.ListDeletedProjects)
+
 	admin.Get("/:id", projectHandler.GetProject)
+
 	admin.Put("/:id", projectHandler.UpdateProject)
+
+	admin.Delete("/:id", projectHandler.DeleteProject)
+
+	admin.Patch("/:id/restore", projectHandler.RestoreProject)
+
+	admin.Delete("/:id/permanent", projectHandler.PermanentDeleteProject)
 }
