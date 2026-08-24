@@ -16,6 +16,11 @@ func New() *fiber.App {
 		ErrorHandler: response.ErrorHandler,
 	})
 
+	app.Static(
+		"/uploads",
+		"./storage/uploads",
+	)
+
 	middleware.Register(app)
 
 	// Register routes ONLY ONCE

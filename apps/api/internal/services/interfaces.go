@@ -36,3 +36,10 @@ type ProjectRepository interface {
 	ListDeleted(ctx context.Context, page int, limit int, search string) ([]models.Project, int64, error)
 	List(ctx context.Context, page, limit int, search, status string) ([]models.Project, int64, error)
 }
+
+type MediaRepository interface {
+	Create(ctx context.Context, media *models.Media) error
+	FindByID(ctx context.Context, id uuid.UUID) (*models.Media, error)
+	List(ctx context.Context, page int, limit int) ([]models.Media, int64, error)
+	Delete(ctx context.Context, id uuid.UUID) error
+}

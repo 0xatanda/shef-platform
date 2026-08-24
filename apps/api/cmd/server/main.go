@@ -28,6 +28,7 @@ func main() {
 
 	log.Println("✅ Database connected")
 
+	// Run migrations
 	if err := database.Migrate(cfg); err != nil {
 		log.Fatalf("migration failed: %v", err)
 	}
