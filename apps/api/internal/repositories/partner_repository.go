@@ -18,7 +18,7 @@ func NewPartnerRepository(db *gorm.DB) *PartnerRepository {
 	}
 }
 
-func (r *partnerRepository) Create(
+func (r *PartnerRepository) Create(
 	ctx context.Context,
 	partner *models.Partner,
 ) error {
@@ -27,7 +27,7 @@ func (r *partnerRepository) Create(
 		Error
 }
 
-func (r *partnerRepository) FindByID(
+func (r *PartnerRepository) FindByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*models.Partner, error) {
@@ -46,7 +46,7 @@ func (r *partnerRepository) FindByID(
 	return &partner, nil
 }
 
-func (r *partnerRepository) FindByName(
+func (r *PartnerRepository) FindByName(
 	ctx context.Context,
 	name string,
 ) (*models.Partner, error) {
@@ -65,7 +65,7 @@ func (r *partnerRepository) FindByName(
 	return &partner, nil
 }
 
-func (r *partnerRepository) List(
+func (r *PartnerRepository) List(
 	ctx context.Context,
 	page int,
 	limit int,
@@ -102,7 +102,7 @@ func (r *partnerRepository) List(
 	return partners, total, nil
 }
 
-func (r *partnerRepository) ListPublic(
+func (r *PartnerRepository) ListPublic(
 	ctx context.Context,
 ) ([]models.Partner, error) {
 
@@ -117,7 +117,7 @@ func (r *partnerRepository) ListPublic(
 	return partners, err
 }
 
-func (r *partnerRepository) Update(
+func (r *PartnerRepository) Update(
 	ctx context.Context,
 	partner *models.Partner,
 ) error {
@@ -126,7 +126,7 @@ func (r *partnerRepository) Update(
 		Error
 }
 
-func (r *partnerRepository) Delete(
+func (r *PartnerRepository) Delete(
 	ctx context.Context,
 	id uuid.UUID,
 ) error {
@@ -136,7 +136,7 @@ func (r *partnerRepository) Delete(
 		Error
 }
 
-func (r *partnerRepository) Restore(
+func (r *PartnerRepository) Restore(
 	ctx context.Context,
 	id uuid.UUID,
 ) error {
@@ -150,7 +150,7 @@ func (r *partnerRepository) Restore(
 	return result.Error
 }
 
-func (r *partnerRepository) PermanentDelete(
+func (r *PartnerRepository) PermanentDelete(
 	ctx context.Context,
 	id uuid.UUID,
 ) error {
@@ -161,7 +161,7 @@ func (r *partnerRepository) PermanentDelete(
 		Error
 }
 
-func (r *partnerRepository) ExistsByName(
+func (r *PartnerRepository) ExistsByName(
 	ctx context.Context,
 	name string,
 ) (bool, error) {
@@ -177,7 +177,7 @@ func (r *partnerRepository) ExistsByName(
 	return count > 0, err
 }
 
-func (r *partnerRepository) ExistsByNameExceptID(
+func (r *PartnerRepository) ExistsByNameExceptID(
 	ctx context.Context,
 	name string,
 	id uuid.UUID,

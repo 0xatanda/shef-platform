@@ -13,14 +13,14 @@ import (
 )
 
 type PartnerService struct {
-	partners repositories.PartnerRepository
+	partners *repositories.PartnerRepository
 }
 
 func NewPartnerService(
-	partners repositories.PartnerRepository,
+	partnerRepo *repositories.PartnerRepository,
 ) *PartnerService {
 	return &PartnerService{
-		partners: partners,
+		partners: partnerRepo,
 	}
 }
 
