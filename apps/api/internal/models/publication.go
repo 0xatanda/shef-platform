@@ -9,20 +9,17 @@ import (
 
 type PublicationStatus string
 
-const (
-	PublicationDaft      PublicationStatus = "daft"
-	PublicationPublished PublicationStatus = "published"
-)
-
 type PublicationType string
 
 const (
-	PublicationReport      PublicationType = "report"
-	PublicationArticle     PublicationType = "article"
-	PublicationResearch    PublicationType = "research"
-	PublicationPolicyBrief PublicationType = "policy_brief"
-	PublicationCaseStudy   PublicationType = "case_study"
-	PublicationOther       PublicationType = "other"
+	PublicationReport      PublicationType   = "report"
+	PublicationArticle     PublicationType   = "article"
+	PublicationResearch    PublicationType   = "research"
+	PublicationPolicyBrief PublicationType   = "policy_brief"
+	PublicationCaseStudy   PublicationType   = "case_study"
+	PublicationOther       PublicationType   = "other"
+	PublicationDaft        PublicationStatus = "daft"
+	PublicationPublished   PublicationStatus = "published"
 )
 
 type Publication struct {

@@ -17,4 +17,5 @@ func Register(app *fiber.App) {
 	RegisterAdminRoutes(v1)
 	RegisterProjectRoutes(v1)
 	RegisterMediaRoutes(v1)
+	RegisterPublicationRoutes(v1)
 }
