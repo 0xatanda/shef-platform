@@ -58,3 +58,17 @@ type PublicationRepository interface {
 	ExistsBySlugExceptID(ctx context.Context, slug string, id uuid.UUID) (bool, error)
 	ListDeleted(ctx context.Context, page int, limit int) ([]models.Publication, int64, error)
 }
+
+type PartnerRepository interface {
+	Create(ctx context.Context, partner *models.Partner) error
+	FindByID(ctx context.Context, id uuid.UUID) (*models.Partner, error)
+	FindByName(ctx context.Context, name string) (*models.Partner, error)
+	List(ctx context.Context, page int, limit int, includeDeleted bool) ([]models.Partner, int64, error)
+	ListPublic(ctx context.Context) ([]models.Partner, error)
+	Update(ctx context.Context, partner *models.Partner) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	Restore(ctx context.Context, id uuid.UUID) error
+	PermanentDelete(ctx context.Context, id uuid.UUID) error
+	ExistsByName(ctx context.Context, name string) (bool, error)
+	ExistsByNameExceptID(ctx context.Context, name string, id uuid.UUID) (bool, error)
+}
