@@ -11,7 +11,7 @@ CREATE TABLE team_members (
 
     email VARCHAR(255),
 
-    linkedin TEXT,
+    linked_in TEXT,
 
     twitter TEXT,
 
