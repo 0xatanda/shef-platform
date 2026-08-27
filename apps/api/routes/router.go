@@ -24,4 +24,5 @@ func Register(app *fiber.App) {
 	RegisterTeamMemberRoutes(v1)
 	RegisterTestimonialRoutes(v1)
 	RegisterDonationRoutes(v1)
+	RegisterDashboardRoutes(v1)
 }

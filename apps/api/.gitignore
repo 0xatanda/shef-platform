@@ -13,3 +13,10 @@ dist/
 .DS_Store
 
 *.log
+
+.env
+.env.*
+!.env.example
+
+storage/uploads/*
+!storage/uploads/.gitkeep
