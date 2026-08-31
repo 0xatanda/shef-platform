@@ -1,118 +1,140 @@
-import { Outlet, useNavigate } from "react-router-dom";
-import { logout } from "../api/auth";
+import {
+  Link,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+
+const navigation = [
+  {
+    label: "Dashboard",
+    path: "/admin/dashboard",
+  },
+  {
+    label: "Projects",
+    path: "/admin/projects",
+  },
+  {
+    label: "Publications",
+    path: "/admin/publications",
+  },
+  {
+    label: "Partners",
+    path: "/admin/partners",
+  },
+  {
+    label: "Team",
+    path: "/admin/team",
+  },
+  {
+    label: "Testimonials",
+    path: "/admin/testimonials",
+  },
+  {
+    label: "Media",
+    path: "/admin/media",
+  },
+  {
+    label: "Contacts",
+    path: "/admin/contacts",
+  },
+  {
+    label: "Donations",
+    path: "/admin/donations",
+  },
+];
 
 export default function AdminLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  function handleLogout() {
-    logout();
-    navigate("/admin/login");
+  function logout() {
+    localStorage.removeItem("shef_token");
+    localStorage.removeItem("shef_user");
+
+    navigate("/login", {
+      replace: true,
+    });
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col">
-        <div className="p-6 border-b">
+    <div className="min-h-screen bg-slate-50">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white lg:flex lg:flex-col">
+        <div className="flex h-20 items-center border-b border-slate-200 px-5">
           <img
-            src="/public/logo/SHEF.jpg"
+            src="/logo/SHEF.jpg"
             alt="Shantytown Empowerment Foundation"
             className="h-12 w-auto object-contain"
           />
+
+          <div className="ml-3">
+            <p className="text-sm font-bold text-slate-900">
+              SHEF
+            </p>
+            <p className="text-xs text-slate-500">
+              Administration
+            </p>
+          </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          <a
-            href="/admin/dashboard"
-            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
-          >
-            Dashboard
-          </a>
+        <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+          {navigation.map((item) => {
+            const active =
+              location.pathname === item.path;
 
-          <a
-            href="/admin/projects"
-            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
-          >
-            Projects
-          </a>
-
-          <a
-            href="/admin/publications"
-            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
-          >
-            Publications
-          </a>
-
-          <a
-            href="/admin/partners"
-            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
-          >
-            Partners
-          </a>
-
-          <a
-            href="/admin/team"
-            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
-          >
-            Team
-          </a>
-
-          <a
-            href="/admin/testimonials"
-            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
-          >
-            Testimonials
-          </a>
-
-          <a
-            href="/admin/media"
-            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
-          >
-            Media
-          </a>
-
-          <a
-            href="/admin/contacts"
-            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
-          >
-            Contacts
-          </a>
-
-          <a
-            href="/admin/donations"
-            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
-          >
-            Donations
-          </a>
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={[
+                  "block rounded-lg px-4 py-3 text-sm font-medium transition",
+                  active
+                    ? "bg-[#00843D] text-white"
+                    : "text-slate-700 hover:bg-slate-100",
+                ].join(" ")}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="p-4 border-t">
+        <div className="border-t border-slate-200 p-4">
           <button
-            onClick={handleLogout}
-            className="w-full px-4 py-3 rounded-lg text-left text-red-600 hover:bg-red-50"
+            type="button"
+            onClick={logout}
+            className="w-full rounded-lg px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-red-50"
           >
             Sign out
           </button>
         </div>
       </aside>
 
-      <div className="flex-1">
-        <header className="bg-white border-b px-6 py-4 flex justify-between items-center">
-          <h1 className="font-semibold text-gray-800">
-            SHEF Administration
-          </h1>
+      <main className="min-h-screen lg:pl-64">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-[#00843D]">
+              SHEF Administration
+            </p>
+
+            <h2 className="text-lg font-semibold text-slate-900">
+              Content Management System
+            </h2>
+          </div>
 
           <button
-            onClick={handleLogout}
-            className="text-sm text-red-600"
+            type="button"
+            onClick={logout}
+            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 lg:hidden"
           >
             Sign out
           </button>
         </header>
 
-        <main className="p-6">
+        <div className="p-4 sm:p-6">
           <Outlet />
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
