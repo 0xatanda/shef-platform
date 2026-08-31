@@ -1,13 +1,14 @@
 import { Navigate, Outlet } from "react-router-dom";
+import { isAuthenticated } from "../api/auth";
 
 export default function ProtectedRoute() {
-
-  const token = localStorage.getItem(
-    "shef_token",
-  );
-
-  if (!token) {
-    return <Navigate to="/login" replace />;
+  if (!isAuthenticated()) {
+    return (
+      <Navigate
+        to="/admin/login"
+        replace
+      />
+    );
   }
 
   return <Outlet />;

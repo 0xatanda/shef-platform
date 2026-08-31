@@ -1,52 +1,60 @@
 export default function Dashboard() {
+  const cards = [
+    {
+      title: "Projects",
+      href: "/admin/projects",
+    },
+    {
+      title: "Publications",
+      href: "/admin/publications",
+    },
+    {
+      title: "Partners",
+      href: "/admin/partners",
+    },
+    {
+      title: "Media",
+      href: "/admin/media",
+    },
+    {
+      title: "Contacts",
+      href: "/admin/contacts",
+    },
+    {
+      title: "Donations",
+      href: "/admin/donations",
+    },
+  ];
 
   return (
     <div>
-
       <div className="mb-8">
-
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h2 className="text-3xl font-bold">
           Dashboard
-        </h1>
+        </h2>
 
-        <p className="mt-1 text-sm text-slate-500">
-          Overview of your SHEF website.
+        <p className="text-gray-500 mt-2">
+          Manage the SHEF website.
         </p>
-
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
-        {[
-          "Projects",
-          "Publications",
-          "Partners",
-          "Team Members",
-          "Testimonials",
-          "Media",
-          "Contacts",
-          "Donations",
-        ].map((item) => (
-
-          <div
-            key={item}
-            className="rounded-xl border border-slate-200 bg-white p-6"
+      <div className="grid md:grid-cols-3 gap-6">
+        {cards.map((card) => (
+          <a
+            key={card.href}
+            href={card.href}
+            className="bg-white border border-gray-200 rounded-xl p-6 hover:border-green-500 hover:shadow-sm transition"
           >
+            <h3 className="font-semibold text-lg">
+              {card.title}
+            </h3>
 
-            <p className="text-sm text-slate-500">
-              {item}
+            <p className="text-green-700 mt-3">
+              Manage →
             </p>
-
-            <p className="mt-2 text-3xl font-bold text-slate-900">
-              —
-            </p>
-
-          </div>
-
+          </a>
         ))}
-
       </div>
-
     </div>
   );
 }

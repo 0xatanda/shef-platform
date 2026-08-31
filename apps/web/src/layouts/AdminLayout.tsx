@@ -1,133 +1,118 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
+import { logout } from "../api/auth";
 
 export default function AdminLayout() {
-
   const navigate = useNavigate();
 
-  function logout() {
-
-    localStorage.removeItem("shef_token");
-    localStorage.removeItem("shef_user");
-
-    navigate("/login");
+  function handleLogout() {
+    logout();
+    navigate("/admin/login");
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white lg:block">
-
-        <div className="flex h-16 items-center border-b border-slate-200 px-6">
-
-          <span className="text-lg font-bold text-slate-900">
-            SHEF Admin
-          </span>
-
+    <div className="min-h-screen bg-gray-100 flex">
+      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col">
+        <div className="p-6 border-b">
+          <img
+            src="/public/logo/SHEF.jpg"
+            alt="Shantytown Empowerment Foundation"
+            className="h-12 w-auto object-contain"
+          />
         </div>
 
-        <nav className="space-y-1 p-4">
-
-          <Link
-            to="/admin/dashboard"
-            className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+        <nav className="flex-1 p-4 space-y-1">
+          <a
+            href="/admin/dashboard"
+            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
           >
             Dashboard
-          </Link>
+          </a>
 
-          <Link
-            to="/admin/projects"
-            className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          <a
+            href="/admin/projects"
+            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
           >
             Projects
-          </Link>
+          </a>
 
-          <Link
-            to="/admin/publications"
-            className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          <a
+            href="/admin/publications"
+            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
           >
             Publications
-          </Link>
+          </a>
 
-          <Link
-            to="/admin/partners"
-            className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          <a
+            href="/admin/partners"
+            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
           >
             Partners
-          </Link>
+          </a>
 
-          <Link
-            to="/admin/team"
-            className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          <a
+            href="/admin/team"
+            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
           >
             Team
-          </Link>
+          </a>
 
-          <Link
-            to="/admin/testimonials"
-            className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          <a
+            href="/admin/testimonials"
+            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
           >
             Testimonials
-          </Link>
+          </a>
 
-          <Link
-            to="/admin/media"
-            className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          <a
+            href="/admin/media"
+            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
           >
             Media
-          </Link>
+          </a>
 
-          <Link
-            to="/admin/contacts"
-            className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          <a
+            href="/admin/contacts"
+            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
           >
             Contacts
-          </Link>
+          </a>
 
-          <Link
-            to="/admin/donations"
-            className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          <a
+            href="/admin/donations"
+            className="block px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-700"
           >
             Donations
-          </Link>
-
+          </a>
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 border-t border-slate-200 p-4">
-
+        <div className="p-4 border-t">
           <button
-            onClick={logout}
-            className="w-full rounded-lg px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+            onClick={handleLogout}
+            className="w-full px-4 py-3 rounded-lg text-left text-red-600 hover:bg-red-50"
           >
             Sign out
           </button>
-
         </div>
-
       </aside>
 
-      <main className="lg:pl-64">
-
-        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
-
-          <h2 className="text-lg font-semibold text-slate-900">
-            Admin Dashboard
-          </h2>
+      <div className="flex-1">
+        <header className="bg-white border-b px-6 py-4 flex justify-between items-center">
+          <h1 className="font-semibold text-gray-800">
+            SHEF Administration
+          </h1>
 
           <button
-            onClick={logout}
-            className="text-sm text-slate-600 lg:hidden"
+            onClick={handleLogout}
+            className="text-sm text-red-600"
           >
             Sign out
           </button>
-
         </header>
 
-        <div className="p-6">
+        <main className="p-6">
           <Outlet />
-        </div>
-
-      </main>
-
+        </main>
+      </div>
     </div>
   );
 }
