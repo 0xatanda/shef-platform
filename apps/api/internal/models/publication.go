@@ -18,7 +18,7 @@ const (
 	PublicationPolicyBrief PublicationType   = "policy_brief"
 	PublicationCaseStudy   PublicationType   = "case_study"
 	PublicationOther       PublicationType   = "other"
-	PublicationDaft        PublicationStatus = "daft"
+	PublicationDraft       PublicationStatus = "draft"
 	PublicationPublished   PublicationStatus = "published"
 )
 

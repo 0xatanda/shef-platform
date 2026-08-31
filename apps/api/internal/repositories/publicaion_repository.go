@@ -96,6 +96,24 @@ func (r *PublicationRepository) List(
 	return publications, total, nil
 }
 
+func (r *PublicationRepository) ListPublished(
+	ctx context.Context,
+	page int,
+	limit int,
+) ([]models.Publication, int64, error) {
+	var publications []models.Publication
+	var total int64
+	query := r.db.WithContext(ctx).Model(&models.Publication{}).Where("status = ?", models.PublicationPublished)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * limit
+	if err := query.Order("published_at DESC NULLS LAST, created_at DESC").Offset(offset).Limit(limit).Find(&publications).Error; err != nil {
+		return nil, 0, err
+	}
+	return publications, total, nil
+}
+
 func (r *PublicationRepository) Update(
 	ctx context.Context,
 	publication *models.Publication,

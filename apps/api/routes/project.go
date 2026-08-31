@@ -31,6 +31,9 @@ func RegisterProjectRoutes(api fiber.Router) {
 	// Handler
 	projectHandler := handlers.NewProjectHandler(projectService)
 
+	api.Get("/projects", projectHandler.ListProjects)
+	api.Get("/projects/:id", projectHandler.GetProject)
+
 	admin := api.Group("/admin/projects", authMiddleware.Protect(), middleware.RequireRoles(string(models.RoleAdmin), string(models.RoleSuperAdmin)))
 	admin.Post("/", projectHandler.CreateProject)
 	admin.Get("/", projectHandler.ListProjects)

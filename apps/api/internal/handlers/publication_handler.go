@@ -77,6 +77,16 @@ func (h *PublicationHandler) CreatePublication(c *fiber.Ctx) error {
 	)
 }
 
+func (h *PublicationHandler) ListPublishedPublications(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+	publications, err := h.service.ListPublishedPublications(c.Context(), page, limit)
+	if err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, err.Error(), nil)
+	}
+	return response.Success(c, "Publications retrieved successfully", publications)
+}
+
 func (h *PublicationHandler) ListPublications(c *fiber.Ctx) error {
 
 	page, _ := strconv.Atoi(c.Query("page", "1"))

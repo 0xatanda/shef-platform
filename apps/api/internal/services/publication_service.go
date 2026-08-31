@@ -45,7 +45,7 @@ func (s *PublicationService) CreatePublication(
 	status := models.PublicationStatus(req.Status)
 
 	if status == "" {
-		status = models.PublicationDaft
+		status = models.PublicationDraft
 	}
 
 	publicationType := models.PublicationType(req.Type)
@@ -145,6 +145,29 @@ func (s *PublicationService) ListPublications(
 			TotalPages: totalPages,
 		},
 	}, nil
+}
+
+func (s *PublicationService) ListPublishedPublications(
+	ctx context.Context,
+	page int,
+	limit int,
+) (*dto.PublicationListResponse, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 10
+	}
+	publications, total, err := s.publications.ListPublished(ctx, page, limit)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]dto.PublicationResponse, 0, len(publications))
+	for i := range publications {
+		items = append(items, *publicationResponse(&publications[i]))
+	}
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+	return &dto.PublicationListResponse{Items: items, Pagination: dto.PaginationResponse{Page: page, Limit: limit, Total: total, TotalPages: totalPages}}, nil
 }
 
 func (s *PublicationService) UpdatePublication(

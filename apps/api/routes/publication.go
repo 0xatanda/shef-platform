@@ -30,6 +30,9 @@ func RegisterPublicationRoutes(api fiber.Router) {
 	publicationHandler :=
 		handlers.NewPublicationHandler(publicationService)
 
+	api.Get("/publications", publicationHandler.ListPublishedPublications)
+	api.Get("/publications/:id", publicationHandler.GetPublication)
+
 	admin := api.Group("/admin/publications", authMiddleware.Protect(), middleware.RequireRoles(string(models.RoleAdmin), string(models.RoleSuperAdmin)))
 	admin.Post("/", publicationHandler.CreatePublication)
 	admin.Get("/", publicationHandler.ListPublications)

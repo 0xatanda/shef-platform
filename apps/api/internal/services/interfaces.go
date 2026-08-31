@@ -49,6 +49,7 @@ type PublicationRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*models.Publication, error)
 	FindBySlug(ctx context.Context, slug string) (*models.Publication, error)
 	List(ctx context.Context, page int, limit int) ([]models.Publication, int64, error)
+	ListPublished(ctx context.Context, page int, limit int) ([]models.Publication, int64, error)
 	Update(ctx context.Context, publication *models.Publication) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	Restore(ctx context.Context, id uuid.UUID) error
