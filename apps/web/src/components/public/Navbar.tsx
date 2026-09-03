@@ -18,7 +18,7 @@ export default function Navbar() {
         <div className="h-20 flex items-center justify-between">
           <Link to="/">
             <img
-              src="/public/logo/SHEF.png"
+              src="/logo/SHEF.jpg"
               alt="Shantytown Empowerment Foundation"
               className="h-14 w-auto object-contain"
             />

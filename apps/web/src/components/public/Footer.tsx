@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div>
             <img
-              src="/public/logo/SHEF.png"
+              src="/logo/SHEF.png"
               alt="Shantytown Empowerment Foundation"
               className="h-16 w-auto object-contain mb-5"
             />

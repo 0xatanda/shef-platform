@@ -1,244 +1,464 @@
-import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import {
-  getProjects,
-  type Project,
-} from "../../api/projects";
-import {
-  getPublications,
-  type Publication,
-} from "../../api/publications";
-import {
-  getMediaUrl,
-} from "../../api/media";
+import { motion } from "framer-motion";
+import api from "../../api/client";
+import AvatarCloud from "../../components/AvatarCloud";
+import AnimatedNumber from "../../components/AnimatedNumber";
+
+type Partner = {
+  id: string;
+  name: string;
+  logo_url?: string;
+  website_url?: string;
+  is_active?: boolean;
+};
+
+type Project = {
+  id: string;
+  title?: string;
+  name?: string;
+  slug?: string;
+  summary?: string;
+  description?: string;
+  image_url?: string;
+  is_active?: boolean;
+};
+
+type ApiListResponse<T> = {
+  success: boolean;
+  message?: string;
+  data?: {
+    items?: T[];
+  };
+};
+
+const fallbackPartners: Partner[] = [
+  {
+    id: "sdi",
+    name: "SDI",
+    logo_url: "/partners/sdi.jpg",
+    website_url: "",
+    is_active: true,
+  },
+  {
+    id: "hbs",
+    name: "Heinrich Böll Stiftung",
+    logo_url: "/partners/hbs.jpg",
+    website_url: "",
+    is_active: true,
+  },
+  {
+    id: "acrc",
+    name: "ACRC",
+    logo_url: "/partners/acrc.jpg",
+    website_url: "",
+    is_active: true,
+  },
+];
+
+const metrics = [
+  {
+    value: 25,
+    suffix: "+",
+    label: "Savings Groups Supported",
+  },
+  {
+    value: 10,
+    suffix: "+",
+    label: "Communities Reached",
+  },
+  {
+    value: 5000,
+    suffix: "+",
+    label: "Households Impacted",
+  },
+  {
+    value: 3,
+    suffix: "+",
+    label: "Years of Community Organizing",
+  },
+];
+
+
+const API_ORIGIN =
+  import.meta.env.VITE_API_ORIGIN || "http://localhost:8080";
+
+function resolveImageUrl(url?: string) {
+  if (!url) return "";
+
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  if (url.startsWith("/uploads/")) {
+    return `${API_ORIGIN}${url}`;
+  }
+
+  return url;
+}
 
 export default function Home() {
-  const [projects, setProjects] = useState<Project[]>(
-    [],
-  );
-
-  const [publications, setPublications] =
-    useState<Publication[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+  const [loadingPartners, setLoadingPartners] = useState(true);
 
   useEffect(() => {
-    async function load() {
+    document.title =
+      "Home | Shantytown Empowerment Foundation";
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchHomeProjects() {
       try {
-        const [projectResult, publicationResult] =
-          await Promise.all([
-            getProjects(),
-            getPublications(),
-          ]);
+        const response =
+          await api.get<ApiListResponse<Project>>(
+            "/projects",
+          );
 
-        setProjects(
-          projectResult.data?.items || [],
-        );
+        if (cancelled) return;
 
-        setPublications(
-          publicationResult.data?.items || [],
-        );
+        if (response.data.success) {
+          setProjects(
+            response.data.data?.items?.slice(0, 3) ?? [],
+          );
+        }
       } catch {
-        // Public page remains usable if API is unavailable.
+        if (!cancelled) {
+          setProjects([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingProjects(false);
+        }
       }
     }
 
-    load();
+    void fetchHomeProjects();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchHomePartners() {
+      try {
+        const response =
+          await api.get<ApiListResponse<Partner>>(
+            "/partners",
+          );
+
+        if (cancelled) return;
+
+        if (response.data.success) {
+          setPartners(
+            response.data.data?.items?.filter(
+              (partner) => partner.is_active !== false,
+            ) ?? [],
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setPartners([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingPartners(false);
+        }
+      }
+    }
+
+    void fetchHomePartners();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /*
+   * IMPORTANT:
+   * fallbackPartners is already Partner[].
+   * Do not map it to a different object shape.
+   *
+   * This preserves:
+   * - logo_url
+   * - website_url
+   * - is_active
+   */
+  const displayedPartners: Partner[] =
+    partners.length > 0
+      ? partners
+      : fallbackPartners;
 
   return (
     <>
-      <section className="bg-green-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
-          <div className="max-w-3xl">
-            <p className="text-green-700 font-semibold mb-4">
-              SHANTYTOWN EMPOWERMENT FOUNDATION
-            </p>
-
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-tight">
-              Building stronger and more resilient
-              communities together.
+      {/* HERO */}
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:py-24">
+        <div className="grid items-center gap-16 md:grid-cols-2">
+          <div className="text-center md:text-left">
+            <h1 className="text-3xl font-bold leading-tight text-slate-900 sm:text-4xl md:text-5xl">
+              Shantytown Empowerment Foundation
             </h1>
 
-            <p className="mt-6 text-lg text-gray-600 leading-8">
-              We work with communities to advance
-              inclusive development, access to basic
-              services, housing, livelihoods and
-              sustainable urban development.
+            <p className="mx-auto mt-6 max-w-xl leading-7 text-gray-600 md:mx-0">
+              SHEF is a dedicated non-governmental organization
+              supporting the Nigeria Slum/Informal Settlement
+              Federation (NSISF), committed to empowering
+              marginalized and deprived communities through
+              social and economic transformation initiatives
+              aimed at improving livelihoods, promoting
+              sustainable development, and fostering inclusive
+              growth across Nigeria.
             </p>
 
-            <div className="flex flex-wrap gap-4 mt-8">
-              <Link
-                to="/projects"
-                className="bg-green-600 text-white px-6 py-3 rounded-md font-medium hover:bg-green-700"
-              >
-                Explore our work
-              </Link>
+            <p className="mx-auto mt-4 max-w-xl leading-7 text-gray-600 md:mx-0">
+              SHEF and the Nigeria Federation are Nigeria
+              affiliates of Slum Dwellers International (SDI).
+              Through partnerships, advocacy, and
+              community-driven projects, SHEF works to address
+              critical needs in housing, water, sanitation,
+              health, and economic empowerment, helping
+              communities build resilience and achieve lasting
+              progress.
+            </p>
 
-              <Link
-                to="/about"
-                className="border border-green-600 text-green-700 px-6 py-3 rounded-md font-medium hover:bg-green-100"
+            <div className="mt-8 flex flex-wrap justify-center gap-4 md:justify-start">
+              <a
+                href="/projects"
+                className="rounded-md bg-green-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-green-700"
               >
-                Learn more
-              </Link>
+                Our Projects
+              </a>
+
+              <a
+                href="/about"
+                className="rounded-md border border-green-600 px-6 py-3 text-sm font-medium text-green-700 transition hover:bg-green-50"
+              >
+                Learn More
+              </a>
             </div>
+          </div>
+
+          <div className="flex justify-center md:justify-end">
+            <AvatarCloud />
           </div>
         </div>
       </section>
 
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mb-10">
-            <p className="text-green-700 font-semibold">
-              OUR WORK
-            </p>
+      {/* IMPACT */}
+      <section className="bg-white py-20">
+        <div className="mx-auto max-w-7xl px-4">
+          <h2 className="text-center text-2xl font-semibold text-slate-900">
+            Our Impact
+          </h2>
 
-            <h2 className="text-3xl md:text-4xl font-bold mt-2">
-              Projects creating community impact
-            </h2>
+          <p className="mx-auto mt-4 max-w-xl text-center text-gray-600">
+            Through community savings, data collection,
+            advocacy, and partnerships, SHEF supports informal
+            settlement communities to lead their own
+            development and influence inclusive policies.
+          </p>
+
+            <div className="mt-12 grid grid-cols-2 gap-6 md:grid-cols-4">
+                {metrics.map((metric) => (
+                    <div
+                    key={metric.label}
+                    className="rounded-lg border border-gray-200 bg-white p-6 text-center"
+                    >
+                    <div className="text-3xl font-bold text-green-700">
+                        <AnimatedNumber
+                        value={metric.value}
+                        suffix={metric.suffix}
+                        />
+                    </div>
+
+                    <div className="mt-2 text-sm text-gray-600">
+                        {metric.label}
+                    </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+      </section>
+
+      {/* PROJECTS */}
+      <section className="bg-gray-50 py-20">
+        <div className="mx-auto max-w-7xl px-4">
+          <div className="flex items-end justify-between gap-6">
+            <div>
+              <h2 className="text-2xl font-semibold text-slate-900">
+                Our Projects
+              </h2>
+
+              <p className="mt-4 max-w-xl text-gray-600">
+                Community-led initiatives supporting
+                inclusive development, improved livelihoods,
+                and resilient informal settlements.
+              </p>
+            </div>
+
+            <a
+              href="/projects"
+              className="hidden text-sm font-semibold text-green-700 hover:text-green-800 sm:block"
+            >
+              View all projects →
+            </a>
           </div>
 
-          {projects.length === 0 ? (
-            <p className="text-gray-500">
-              Projects will appear here once they are
-              published.
-            </p>
-          ) : (
-            <div className="grid md:grid-cols-3 gap-8">
-              {projects.slice(0, 6).map((project) => (
-                <article
+          {loadingProjects && (
+            <div className="mt-10 text-sm text-gray-500">
+              Loading projects...
+            </div>
+          )}
+
+          {!loadingProjects && projects.length > 0 && (
+            <div className="mt-10 grid gap-8 md:grid-cols-3">
+              {projects.map((project) => (
+                <a
                   key={project.id}
-                  className="border border-gray-200 rounded-xl overflow-hidden bg-white"
+                  href={`/projects/${
+                    project.slug || project.id
+                  }`}
+                  className="group overflow-hidden rounded-xl border border-gray-200 bg-white transition hover:-translate-y-1 hover:shadow-lg"
                 >
                   {project.image_url && (
                     <img
-                      src={getMediaUrl(
+                      src={resolveImageUrl(
                         project.image_url,
                       )}
-                      alt={project.title}
-                      className="w-full h-52 object-cover"
+                      alt={
+                        project.title ||
+                        project.name ||
+                        "SHEF project"
+                      }
+                      className="h-56 w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                   )}
 
                   <div className="p-6">
-                    <h3 className="font-semibold text-xl">
-                      {project.title}
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {project.title ||
+                        project.name ||
+                        "Untitled project"}
                     </h3>
 
-                    <p className="mt-3 text-gray-600 line-clamp-3">
-                      {project.description}
-                    </p>
+                    {(project.summary ||
+                      project.description) && (
+                      <p className="mt-3 line-clamp-3 text-sm leading-6 text-gray-600">
+                        {project.summary ||
+                          project.description}
+                      </p>
+                    )}
 
-                    <Link
-                      to={`/projects/${project.id}`}
-                      className="inline-block mt-5 text-green-700 font-medium"
-                    >
-                      Read more →
-                    </Link>
+                    <span className="mt-5 inline-block text-sm font-semibold text-green-700">
+                      Learn more →
+                    </span>
                   </div>
-                </article>
+                </a>
               ))}
             </div>
           )}
 
-          {projects.length > 0 && (
-            <div className="mt-10">
-              <Link
-                to="/projects"
-                className="text-green-700 font-semibold"
-              >
-                View all projects →
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="bg-gray-50 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-end mb-10">
-            <div>
-              <p className="text-green-700 font-semibold">
-                RESOURCES
+          {!loadingProjects && projects.length === 0 && (
+            <div className="mt-10 rounded-xl border border-gray-200 bg-white p-8 text-center">
+              <p className="text-sm text-gray-500">
+                Our latest projects will appear here.
               </p>
-
-              <h2 className="text-3xl font-bold mt-2">
-                Latest publications
-              </h2>
-            </div>
-
-            <Link
-              to="/publications"
-              className="text-green-700 font-semibold"
-            >
-              View all →
-            </Link>
-          </div>
-
-          {publications.length === 0 ? (
-            <p className="text-gray-500">
-              Publications will appear here once
-              published.
-            </p>
-          ) : (
-            <div className="grid md:grid-cols-3 gap-8">
-              {publications.slice(0, 3).map(
-                (publication) => (
-                  <article
-                    key={publication.id}
-                    className="bg-white border border-gray-200 rounded-xl overflow-hidden"
-                  >
-                    {publication.image_url && (
-                      <img
-                        src={getMediaUrl(
-                          publication.image_url,
-                        )}
-                        alt={publication.title}
-                        className="w-full h-48 object-cover"
-                      />
-                    )}
-
-                    <div className="p-6">
-                      <h3 className="font-semibold text-lg">
-                        {publication.title}
-                      </h3>
-
-                      <p className="mt-3 text-gray-600 line-clamp-3">
-                        {publication.excerpt ||
-                          publication.description}
-                      </p>
-
-                      <Link
-                        to={`/publications/${publication.id}`}
-                        className="inline-block mt-5 text-green-700 font-medium"
-                      >
-                        Read publication →
-                      </Link>
-                    </div>
-                  </article>
-                ),
-              )}
             </div>
           )}
+
+          <a
+            href="/projects"
+            className="mt-8 inline-block text-sm font-semibold text-green-700 sm:hidden"
+          >
+            View all projects →
+          </a>
         </div>
       </section>
 
-      <section className="py-20">
-        <div className="max-w-5xl mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold">
-            Work with us to strengthen communities
+      {/* PARTNERS */}
+      <section className="bg-white py-20">
+        <div className="mx-auto max-w-7xl px-4">
+          <h2 className="text-center text-2xl font-semibold text-slate-900">
+            Our Partners
           </h2>
 
-          <p className="mt-5 text-gray-600 text-lg">
-            Whether through partnership, community
-            organising or support, there are many ways
-            to contribute.
+          <p className="mx-auto mt-4 max-w-xl text-center text-gray-600">
+            We collaborate with trusted institutions,
+            academic partners, and community networks to drive
+            sustainable and inclusive impact.
           </p>
 
-          <Link
-            to="/contact"
-            className="inline-block mt-8 bg-green-600 text-white px-7 py-3 rounded-md font-medium hover:bg-green-700"
-          >
-            Get in touch
-          </Link>
+          {loadingPartners ? (
+            <div className="mt-12 text-center text-sm text-gray-500">
+              Loading partners...
+            </div>
+          ) : (
+            <motion.div
+              className="mt-12 flex flex-wrap items-center justify-center gap-10"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: 0.2,
+                  },
+                },
+              }}
+            >
+              {displayedPartners.map((partner) => (
+                <motion.div
+                  key={partner.id}
+                  className="flex items-center justify-center"
+                  variants={{
+                    hidden: {
+                      opacity: 0,
+                      y: 20,
+                    },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                    },
+                  }}
+                  transition={{
+                    duration: 0.6,
+                    ease: "easeOut",
+                  }}
+                >
+                  {partner.website_url ? (
+                    <a
+                      href={partner.website_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={partner.name}
+                    >
+                      <img
+                        src={resolveImageUrl(
+                          partner.logo_url,
+                        )}
+                        alt={partner.name}
+                        className="h-16 w-auto object-contain"
+                      />
+                    </a>
+                  ) : (
+                    <img
+                      src={resolveImageUrl(
+                        partner.logo_url,
+                      )}
+                      alt={partner.name}
+                      className="h-16 w-auto object-contain"
+                    />
+                  )}
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
         </div>
       </section>
     </>
