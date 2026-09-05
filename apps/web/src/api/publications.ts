@@ -1,22 +1,24 @@
 import api from "./client";
 
-export interface Publication {
+export type Publication = {
   id: string;
   title: string;
-  slug?: string;
-  description?: string;
-  content?: string;
-  excerpt?: string;
-  cover_image?: string;
-  image_url?: string;
-  author?: string;
-  category?: string;
-  status?: string;
-  published_at?: string;
+  slug: string;
+  summary: string;
+  content: string;
+  type: string;
+  status: string;
+  featured_image: string;
+  author: string;
+  published_at?: string | null;
+  published_by?: string | null;
+  created_by?: string;
+  updated_by?: string;
   created_at?: string;
-}
+  updated_at?: string;
+};
 
-export interface PublicationListResponse {
+export type PublicationListResponse = {
   success: boolean;
   message: string;
   data: {
@@ -28,12 +30,21 @@ export interface PublicationListResponse {
       total_pages: number;
     };
   };
-}
+};
 
-export async function getPublications() {
+export type PublicationResponse = {
+  success: boolean;
+  message: string;
+  data: Publication;
+};
+
+export async function getPublications(
+  page = 1,
+  limit = 10,
+) {
   const response =
     await api.get<PublicationListResponse>(
-      "/publications",
+      `/publications?page=${page}&limit=${limit}`,
     );
 
   return response.data;
@@ -41,10 +52,9 @@ export async function getPublications() {
 
 export async function getPublication(id: string) {
   const response =
-    await api.get<{
-      success: boolean;
-      data: Publication;
-    }>(`/publications/${id}`);
+    await api.get<PublicationResponse>(
+      `/publications/${id}`,
+    );
 
   return response.data;
 }

@@ -22,6 +22,8 @@ type Project struct {
 
 	Status ProjectStatus `gorm:"size:20;default:'draft'"`
 
+	Media []ProjectMedia `gorm:"foreignKey:ProjectID"`
+
 	PublishedAt *time.Time
 
 	CreatedBy uuid.UUID `gorm:"type:uuid"`

@@ -39,7 +39,13 @@ type Publication struct {
 
 	FeaturedImage string `gorm:"type:text"`
 
+	ExternalURL string `gorm:"type:text"`
+
 	Author string `gorm:"size:255"`
+
+	Media []PublicationMedia `gorm:"foreignKey:PublicationID"`
+
+	Blocks []PublicationBlock `gorm:"foreignKey:PublicationID"`
 
 	PublishedAt *time.Time
 

@@ -8,6 +8,7 @@ type CreatePublicationRequest struct {
 	Content       string `json:"content" validate:"required"`
 	Type          string `json:"type" validate:"omitempty,oneof=report research article policy_brief case_study other"`
 	FeaturedImage string `json:"featured_image"`
+	ExternalURL   string `json:"external_url"`
 	Author        string `json:"author" validate:"max=255"`
 	Status        string `json:"status" validate:"omitempty,oneof=draft published"`
 }
@@ -18,6 +19,7 @@ type UpdatePublicationRequest struct {
 	Content       string `json:"content" validate:"required"`
 	Type          string `json:"type" validate:"omitempty,oneof=report research article policy_brief case_study other"`
 	FeaturedImage string `json:"featured_image"`
+	ExternalURL   string `json:"external_url"`
 	Author        string `json:"author" validate:"max=255"`
 	Status        string `json:"status" validate:"omitempty,oneof=draft published"`
 }

@@ -6,13 +6,15 @@ import PublicLayout from "../layouts/PublicLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AdminLayout from "../layouts/AdminLayout";
 
+// Public pages
 import Home from "../pages/public/Home";
 import About from "../pages/public/About";
 import Projects from "../pages/public/Projects";
 import Publications from "../pages/public/Publications";
+import PublicationDetails from "../pages/public/PublicationDetails";
 import Contact from "../pages/public/Contact";
 
-
+// Admin pages
 import Dashboard from "../pages/admin/Dashboard";
 import AdminProjects from "../pages/admin/Projects";
 import AdminPublications from "../pages/admin/Publications";
@@ -26,14 +28,27 @@ import Donations from "../pages/admin/Donations";
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* AUTH */}
-      <Route path="/login" element={<Login />} />
+      {/* =========================
+          AUTH
+      ========================== */}
+      <Route
+        path="/login"
+        element={<Login />}
+      />
 
-      {/* PUBLIC WEBSITE */}
+      {/* =========================
+          PUBLIC WEBSITE
+      ========================== */}
       <Route element={<PublicLayout />}>
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/"
+          element={<Home />}
+        />
 
-        <Route path="/about" element={<About />} />
+        <Route
+          path="/about"
+          element={<About />}
+        />
 
         <Route
           path="/projects"
@@ -46,12 +61,19 @@ export default function AppRoutes() {
         />
 
         <Route
+          path="/publications/:id"
+          element={<PublicationDetails />}
+        />
+
+        <Route
           path="/contact"
           element={<Contact />}
         />
       </Route>
 
-      {/* ADMIN */}
+      {/* =========================
+          ADMIN
+      ========================== */}
       <Route element={<ProtectedRoute />}>
         <Route
           path="/admin"
@@ -114,10 +136,17 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
-      {/* FALLBACK */}
+      {/* =========================
+          FALLBACK
+      ========================== */}
       <Route
         path="*"
-        element={<Navigate to="/" replace />}
+        element={
+          <Navigate
+            to="/"
+            replace
+          />
+        }
       />
     </Routes>
   );
