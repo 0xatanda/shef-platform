@@ -327,3 +327,155 @@ func (h *ProjectHandler) ListDeletedProjects(c *fiber.Ctx) error {
 		result,
 	)
 }
+
+func (h *ProjectHandler) AddProjectMedia(c *fiber.Ctx) error {
+	var req dto.AddProjectMediaRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Invalid request body",
+			nil,
+		)
+	}
+
+	userIDStr, ok := c.Locals("user_id").(string)
+	if !ok {
+		return response.Error(
+			c,
+			fiber.StatusUnauthorized,
+			"Unauthorized",
+			nil,
+		)
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusUnauthorized,
+			"Invalid user ID",
+			nil,
+		)
+	}
+
+	result, err := h.service.AddProjectMedia(
+		c.Context(),
+		c.Params("id"),
+		userID,
+		req,
+	)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"Project media added successfully",
+		result,
+	)
+}
+
+func (h *ProjectHandler) ListProjectMedia(c *fiber.Ctx) error {
+	result, err := h.service.ListProjectMedia(
+		c.Context(),
+		c.Params("id"),
+	)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"Project media retrieved successfully",
+		result,
+	)
+}
+
+func (h *ProjectHandler) DeleteProjectMedia(c *fiber.Ctx) error {
+	err := h.service.DeleteProjectMedia(
+		c.Context(),
+		c.Params("id"),
+		c.Params("mediaId"),
+	)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"Project media removed successfully",
+		nil,
+	)
+}
+
+func (h *ProjectHandler) SetFeaturedProjectMedia(c *fiber.Ctx) error {
+	err := h.service.SetFeaturedProjectMedia(
+		c.Context(),
+		c.Params("id"),
+		c.Params("mediaId"),
+	)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"Project featured image updated successfully",
+		nil,
+	)
+}
+
+func (h *ProjectHandler) ReorderProjectMedia(c *fiber.Ctx) error {
+	var req dto.UpdateProjectMediaOrderRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Invalid request body",
+			nil,
+		)
+	}
+
+	err := h.service.ReorderProjectMedia(
+		c.Context(),
+		c.Params("id"),
+		req,
+	)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"Project media order updated successfully",
+		nil,
+	)
+}

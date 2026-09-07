@@ -15,14 +15,20 @@ import (
 )
 
 type ProjectService struct {
-	projects ProjectRepository
+	projects     ProjectRepository
+	projectMedia ProjectMediaRepository
+	contentMedia ContentMediaRepository
 }
 
 func NewProjectService(
 	projects ProjectRepository,
+	projectMedia ProjectMediaRepository,
+	contentMedia ContentMediaRepository,
 ) *ProjectService {
 	return &ProjectService{
-		projects: projects,
+		projects:     projects,
+		projectMedia: projectMedia,
+		contentMedia: contentMedia,
 	}
 }
 
@@ -97,18 +103,7 @@ func (s *ProjectService) CreateProject(
 		return nil, err
 	}
 
-	return &dto.ProjectResponse{
-		ID:            project.ID.String(),
-		Title:         project.Title,
-		Slug:          project.Slug,
-		Summary:       project.Summary,
-		Content:       project.Content,
-		FeaturedImage: project.FeaturedImage,
-		Status:        string(project.Status),
-		PublishedAt:   project.PublishedAt,
-		CreatedAt:     project.CreatedAt,
-		UpdatedAt:     project.UpdatedAt,
-	}, nil
+	return s.buildProjectResponse(ctx, project)
 }
 
 func (s *ProjectService) ListProjects(
@@ -183,18 +178,7 @@ func (s *ProjectService) GetProject(
 		return nil, err
 	}
 
-	return &dto.ProjectResponse{
-		ID:            project.ID.String(),
-		Title:         project.Title,
-		Slug:          project.Slug,
-		Summary:       project.Summary,
-		Content:       project.Content,
-		FeaturedImage: project.FeaturedImage,
-		Status:        string(project.Status),
-		PublishedAt:   project.PublishedAt,
-		CreatedAt:     project.CreatedAt,
-		UpdatedAt:     project.UpdatedAt,
-	}, nil
+	return s.buildProjectResponse(ctx, project)
 }
 
 func (s *ProjectService) UpdateProject(
@@ -258,18 +242,7 @@ func (s *ProjectService) UpdateProject(
 		return nil, err
 	}
 
-	return &dto.ProjectResponse{
-		ID:            project.ID.String(),
-		Title:         project.Title,
-		Slug:          project.Slug,
-		Summary:       project.Summary,
-		Content:       project.Content,
-		FeaturedImage: project.FeaturedImage,
-		Status:        string(project.Status),
-		PublishedAt:   project.PublishedAt,
-		CreatedAt:     project.CreatedAt,
-		UpdatedAt:     project.UpdatedAt,
-	}, nil
+	return s.buildProjectResponse(ctx, project)
 }
 
 func (s *ProjectService) DeleteProject(
@@ -373,4 +346,282 @@ func (s *ProjectService) ListDeletedProjects(
 			TotalPages: totalPages,
 		},
 	}, nil
+}
+
+func (s *ProjectService) AddProjectMedia(
+	ctx context.Context,
+	projectID string,
+	userID uuid.UUID,
+	req dto.AddProjectMediaRequest,
+) (*dto.ProjectMediaResponse, error) {
+	id, err := uuid.Parse(projectID)
+	if err != nil {
+		return nil, errors.New("invalid project id")
+	}
+
+	mediaID, err := uuid.Parse(req.MediaID)
+	if err != nil {
+		return nil, errors.New("invalid media id")
+	}
+
+	// Make sure project exists.
+	_, err = s.projects.FindByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("project not found")
+		}
+		return nil, err
+	}
+
+	// Make sure content media exists.
+	media, err := s.contentMedia.FindByID(ctx, mediaID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("media not found")
+		}
+		return nil, err
+	}
+
+	// Prevent attaching the same media twice.
+	exists, err := s.projectMedia.Exists(ctx, id, mediaID)
+	if err != nil {
+		return nil, err
+	}
+
+	if exists {
+		return nil, errors.New("media already attached to project")
+	}
+
+	// Get current gallery.
+	gallery, err := s.projectMedia.ListByProjectID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	sortOrder := len(gallery)
+
+	projectMedia := &models.ProjectMedia{
+		ProjectID:  id,
+		MediaID:    mediaID,
+		SortOrder:  sortOrder,
+		IsFeatured: len(gallery) == 0,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+
+	// If this is the first image, automatically make it featured.
+	if projectMedia.IsFeatured {
+		if err := s.projectMedia.ClearFeatured(ctx, id); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := s.projectMedia.Create(ctx, projectMedia); err != nil {
+		return nil, err
+	}
+
+	return &dto.ProjectMediaResponse{
+		ID:         projectMedia.ID.String(),
+		MediaID:    media.ID.String(),
+		URL:        media.URL,
+		AltText:    req.AltText,
+		SortOrder:  projectMedia.SortOrder,
+		IsFeatured: projectMedia.IsFeatured,
+	}, nil
+}
+
+func (s *ProjectService) ListProjectMedia(
+	ctx context.Context,
+	projectID string,
+) ([]dto.ProjectMediaResponse, error) {
+	id, err := uuid.Parse(projectID)
+	if err != nil {
+		return nil, errors.New("invalid project id")
+	}
+
+	_, err = s.projects.FindByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("project not found")
+		}
+		return nil, err
+	}
+
+	items, err := s.projectMedia.ListByProjectID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]dto.ProjectMediaResponse, 0, len(items))
+
+	for _, item := range items {
+		result = append(result, dto.ProjectMediaResponse{
+			ID:         item.ID.String(),
+			MediaID:    item.MediaID.String(),
+			URL:        item.Media.URL,
+			AltText:    item.Media.AltText,
+			SortOrder:  item.SortOrder,
+			IsFeatured: item.IsFeatured,
+		})
+	}
+
+	return result, nil
+}
+
+func (s *ProjectService) DeleteProjectMedia(
+	ctx context.Context,
+	projectID string,
+	mediaID string,
+) error {
+	projectUUID, err := uuid.Parse(projectID)
+	if err != nil {
+		return errors.New("invalid project id")
+	}
+
+	mediaUUID, err := uuid.Parse(mediaID)
+	if err != nil {
+		return errors.New("invalid media id")
+	}
+
+	_, err = s.projects.FindByID(ctx, projectUUID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("project not found")
+		}
+		return err
+	}
+
+	item, err := s.projectMedia.FindByID(ctx, mediaUUID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("project media not found")
+		}
+		return err
+	}
+
+	if item.ProjectID != projectUUID {
+		return errors.New("media does not belong to project")
+	}
+
+	return s.projectMedia.Delete(ctx, mediaUUID)
+}
+
+func (s *ProjectService) ReorderProjectMedia(
+	ctx context.Context,
+	projectID string,
+	req dto.UpdateProjectMediaOrderRequest,
+) error {
+	projectUUID, err := uuid.Parse(projectID)
+	if err != nil {
+		return errors.New("invalid project id")
+	}
+
+	_, err = s.projects.FindByID(ctx, projectUUID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("project not found")
+		}
+		return err
+	}
+
+	for _, item := range req.Items {
+		mediaUUID, err := uuid.Parse(item.ID)
+		if err != nil {
+			return errors.New("invalid project media id")
+		}
+
+		projectMedia, err := s.projectMedia.FindByID(ctx, mediaUUID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("project media not found")
+			}
+			return err
+		}
+
+		if projectMedia.ProjectID != projectUUID {
+			return errors.New("media does not belong to project")
+		}
+
+		if err := s.projectMedia.UpdateOrder(
+			ctx,
+			mediaUUID,
+			item.SortOrder,
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *ProjectService) buildProjectResponse(
+	ctx context.Context,
+	project *models.Project,
+) (*dto.ProjectResponse, error) {
+	media, err := s.ListProjectMedia(ctx, project.ID.String())
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.ProjectResponse{
+		ID:            project.ID.String(),
+		Title:         project.Title,
+		Slug:          project.Slug,
+		Summary:       project.Summary,
+		Content:       project.Content,
+		FeaturedImage: project.FeaturedImage,
+		Status:        string(project.Status),
+		PublishedAt:   project.PublishedAt,
+		CreatedAt:     project.CreatedAt,
+		UpdatedAt:     project.UpdatedAt,
+		Media:         media,
+	}, nil
+}
+
+func (s *ProjectService) SetFeaturedProjectMedia(
+	ctx context.Context,
+	projectID string,
+	mediaID string,
+) error {
+	projectUUID, err := uuid.Parse(projectID)
+	if err != nil {
+		return errors.New("invalid project id")
+	}
+
+	mediaUUID, err := uuid.Parse(mediaID)
+	if err != nil {
+		return errors.New("invalid project media id")
+	}
+
+	// Confirm the project exists.
+	_, err = s.projects.FindByID(ctx, projectUUID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("project not found")
+		}
+
+		return err
+	}
+
+	// Confirm the media belongs to this project.
+	projectMedia, err := s.projectMedia.FindByID(ctx, mediaUUID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("project media not found")
+		}
+
+		return err
+	}
+
+	if projectMedia.ProjectID != projectUUID {
+		return errors.New("media does not belong to project")
+	}
+
+	// Remove featured status from all other project media.
+	if err := s.projectMedia.ClearFeatured(ctx, projectUUID); err != nil {
+		return err
+	}
+
+	// Set this media as featured.
+	return s.projectMedia.SetFeatured(ctx, mediaUUID)
 }

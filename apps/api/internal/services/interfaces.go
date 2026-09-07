@@ -73,3 +73,22 @@ type PartnerRepository interface {
 	ExistsByName(ctx context.Context, name string) (bool, error)
 	ExistsByNameExceptID(ctx context.Context, name string, id uuid.UUID) (bool, error)
 }
+
+type ProjectMediaRepository interface {
+	Create(ctx context.Context, projectMedia *models.ProjectMedia) error
+	ListByProjectID(ctx context.Context, projectID uuid.UUID) ([]models.ProjectMedia, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*models.ProjectMedia, error)
+	Delete(ctx context.Context, id uuid.UUID) error
+	ClearFeatured(ctx context.Context, projectID uuid.UUID) error
+	SetFeatured(ctx context.Context, id uuid.UUID) error
+	UpdateOrder(ctx context.Context, id uuid.UUID, sortOrder int) error
+	Exists(ctx context.Context, projectID uuid.UUID, mediaID uuid.UUID) (bool, error)
+}
+
+type ContentMediaRepository interface {
+	Create(ctx context.Context, media *models.ContentMedia) error
+	FindByID(ctx context.Context, id uuid.UUID) (*models.ContentMedia, error)
+	Update(ctx context.Context, media *models.ContentMedia) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	List(ctx context.Context, page int, limit int, mediaType string) ([]models.ContentMedia, int64, error)
+}

@@ -25,10 +25,16 @@ func RegisterProjectRoutes(api fiber.Router) {
 	// Repository
 	projectRepo := repositories.NewProjectRepository(database.DB)
 
-	// Service
-	projectService := services.NewProjectService(projectRepo)
+	contentMediaRepo := repositories.NewContentMediaRepository(database.DB)
 
-	// Handler
+	projectMediaRepo := repositories.NewProjectMediaRepository(database.DB)
+
+	projectService := services.NewProjectService(
+		projectRepo,
+		projectMediaRepo,
+		contentMediaRepo,
+	)
+
 	projectHandler := handlers.NewProjectHandler(projectService)
 
 	api.Get("/projects", projectHandler.ListProjects)
@@ -36,11 +42,26 @@ func RegisterProjectRoutes(api fiber.Router) {
 
 	admin := api.Group("/admin/projects", authMiddleware.Protect(), middleware.RequireRoles(string(models.RoleAdmin), string(models.RoleSuperAdmin)))
 	admin.Post("/", projectHandler.CreateProject)
+
 	admin.Get("/", projectHandler.ListProjects)
+
 	admin.Get("/deleted", projectHandler.ListDeletedProjects)
+
+	admin.Post("/:id/media", projectHandler.AddProjectMedia)
+
+	admin.Get("/:id/media", projectHandler.ListProjectMedia)
+
+	admin.Delete("/:id/media/:mediaId", projectHandler.DeleteProjectMedia)
+
+	admin.Patch("/:id/media/:mediaId/featured", projectHandler.SetFeaturedProjectMedia)
+
+	admin.Patch("/:id/media/order", projectHandler.ReorderProjectMedia)
+
 	admin.Get("/:id", projectHandler.GetProject)
+
 	admin.Put("/:id", projectHandler.UpdateProject)
+
 	admin.Delete("/:id", projectHandler.DeleteProject)
+
 	admin.Patch("/:id/restore", projectHandler.RestoreProject)
-	admin.Delete("/:id/permanent", projectHandler.PermanentDeleteProject)
 }
