@@ -26,6 +26,7 @@ func Register(app *fiber.App) {
 	RegisterDonationRoutes(v1)
 	RegisterDashboardRoutes(v1)
 	RegisterProjectRoutes(v1)
-	RegisterPublicationRoutes(v1)
 	RegisterMediaRoutes(v1)
+	RegisterContentMediaRoutes(v1)
+	RegisterPublicationRoutes(v1)
 }

@@ -25,7 +25,7 @@ type ContentMedia struct {
 	URL          string `gorm:"type:text;not null"`
 	ThumbnailURL string `gorm:"type:text"`
 
-	YouTubeVideoID string `gorm:"size:100"`
+	YouTubeVideoID string `gorm:"column:youtube_video_id" json:"youtube_video_id"`
 
 	AltText string `gorm:"size:255"`
 
