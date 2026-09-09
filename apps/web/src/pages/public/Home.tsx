@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import api from "../../api/client";
 import AvatarCloud from "../../components/AvatarCloud";
 import AnimatedNumber from "../../components/AnimatedNumber";
+import MediaShowcase from "../../components/MediaShowcase";
 
 type Partner = {
   id: string;
@@ -379,6 +380,8 @@ export default function Home() {
           </a>
         </div>
       </section>
+
+      <MediaShowcase />
 
       {/* PARTNERS */}
       <section className="bg-white py-20">

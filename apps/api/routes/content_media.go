@@ -15,20 +15,21 @@ import (
 func RegisterContentMediaRoutes(api fiber.Router) {
 	cfg := configs.Load()
 
+	mediaRepo := repositories.NewContentMediaRepository(database.DB)
+	mediaService := services.NewContentMediaService(mediaRepo)
+	mediaHandler := handlers.NewContentMediaHandler(mediaService)
+
+	// PUBLIC MEDIA
+	// No authentication required.
+	public := api.Group("/media")
+
+	public.Get("/", mediaHandler.List)
+	public.Get("/:id", mediaHandler.Get)
+
+	// ADMIN MEDIA
+	// Authentication and role protection required.
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 	authMiddleware := middleware.NewAuthMiddleware(jwtService)
-
-	mediaRepo := repositories.NewContentMediaRepository(
-		database.DB,
-	)
-
-	mediaService := services.NewContentMediaService(
-		mediaRepo,
-	)
-
-	mediaHandler := handlers.NewContentMediaHandler(
-		mediaService,
-	)
 
 	admin := api.Group(
 		"/admin/media",
