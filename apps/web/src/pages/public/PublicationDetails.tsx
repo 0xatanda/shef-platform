@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
   Link,
@@ -48,16 +49,43 @@ export default function PublicationDetails() {
       try {
         const result = await getPublication(id);
 
-        if (!result.success) {
+        if (!result.success || !result.data) {
           throw new Error(
             result.message ||
               "Unable to load publication",
           );
         }
 
+        const loadedPublication = result.data;
+
+        /*
+         * Safety check:
+         *
+         * External publications should never be rendered
+         * as a SHEF detail page.
+         *
+         * If somebody manually visits:
+         * /publications/:uuid
+         *
+         * for an external publication, send them directly
+         * to the original publication.
+         */
+        if (
+          loadedPublication.publication_source ===
+            "external" &&
+          loadedPublication.external_url?.trim()
+        ) {
+          window.location.replace(
+            loadedPublication.external_url.trim(),
+          );
+
+          return;
+        }
+
         if (!cancelled) {
-          setPublication(result.data);
-          document.title = `${result.data.title} | SHEF`;
+          setPublication(loadedPublication);
+
+          document.title = `${loadedPublication.title} | SHEF`;
         }
       } catch (err) {
         if (!cancelled) {

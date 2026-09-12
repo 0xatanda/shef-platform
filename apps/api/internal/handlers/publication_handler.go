@@ -23,8 +23,9 @@ func NewPublicationHandler(
 	}
 }
 
-func (h *PublicationHandler) CreatePublication(c *fiber.Ctx) error {
-
+func (h *PublicationHandler) CreatePublication(
+	c *fiber.Ctx,
+) error {
 	var req dto.CreatePublicationRequest
 
 	if err := c.BodyParser(&req); err != nil {
@@ -36,22 +37,12 @@ func (h *PublicationHandler) CreatePublication(c *fiber.Ctx) error {
 		)
 	}
 
-	userIDStr, ok := c.Locals("user_id").(string)
-	if !ok {
-		return response.Error(
-			c,
-			fiber.StatusUnauthorized,
-			"Unauthorized",
-			nil,
-		)
-	}
-
-	userID, err := uuid.Parse(userIDStr)
+	userID, err := getAuthenticatedUserID(c)
 	if err != nil {
 		return response.Error(
 			c,
 			fiber.StatusUnauthorized,
-			"Invalid user id",
+			err.Error(),
 			nil,
 		)
 	}
@@ -77,20 +68,38 @@ func (h *PublicationHandler) CreatePublication(c *fiber.Ctx) error {
 	)
 }
 
-func (h *PublicationHandler) ListPublishedPublications(c *fiber.Ctx) error {
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit, _ := strconv.Atoi(c.Query("limit", "10"))
-	publications, err := h.service.ListPublishedPublications(c.Context(), page, limit)
+func (h *PublicationHandler) ListPublishedPublications(
+	c *fiber.Ctx,
+) error {
+	page, limit := getPagination(c)
+
+	publications, err :=
+		h.service.ListPublishedPublications(
+			c.Context(),
+			page,
+			limit,
+		)
+
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error(), nil)
+		return response.Error(
+			c,
+			fiber.StatusInternalServerError,
+			err.Error(),
+			nil,
+		)
 	}
-	return response.Success(c, "Publications retrieved successfully", publications)
+
+	return response.Success(
+		c,
+		"Publications retrieved successfully",
+		publications,
+	)
 }
 
-func (h *PublicationHandler) ListPublications(c *fiber.Ctx) error {
-
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+func (h *PublicationHandler) ListPublications(
+	c *fiber.Ctx,
+) error {
+	page, limit := getPagination(c)
 
 	publications, err := h.service.ListPublications(
 		c.Context(),
@@ -113,8 +122,9 @@ func (h *PublicationHandler) ListPublications(c *fiber.Ctx) error {
 	)
 }
 
-func (h *PublicationHandler) GetPublication(c *fiber.Ctx) error {
-
+func (h *PublicationHandler) GetPublication(
+	c *fiber.Ctx,
+) error {
 	publication, err := h.service.GetPublication(
 		c.Context(),
 		c.Params("id"),
@@ -135,8 +145,9 @@ func (h *PublicationHandler) GetPublication(c *fiber.Ctx) error {
 	)
 }
 
-func (h *PublicationHandler) UpdatePublication(c *fiber.Ctx) error {
-
+func (h *PublicationHandler) UpdatePublication(
+	c *fiber.Ctx,
+) error {
 	var req dto.UpdatePublicationRequest
 
 	if err := c.BodyParser(&req); err != nil {
@@ -148,22 +159,12 @@ func (h *PublicationHandler) UpdatePublication(c *fiber.Ctx) error {
 		)
 	}
 
-	userIDStr, ok := c.Locals("user_id").(string)
-	if !ok {
-		return response.Error(
-			c,
-			fiber.StatusUnauthorized,
-			"Unauthorized",
-			nil,
-		)
-	}
-
-	userID, err := uuid.Parse(userIDStr)
+	userID, err := getAuthenticatedUserID(c)
 	if err != nil {
 		return response.Error(
 			c,
 			fiber.StatusUnauthorized,
-			"Invalid user id",
+			err.Error(),
 			nil,
 		)
 	}
@@ -190,8 +191,9 @@ func (h *PublicationHandler) UpdatePublication(c *fiber.Ctx) error {
 	)
 }
 
-func (h *PublicationHandler) DeletePublication(c *fiber.Ctx) error {
-
+func (h *PublicationHandler) DeletePublication(
+	c *fiber.Ctx,
+) error {
 	if err := h.service.DeletePublication(
 		c.Context(),
 		c.Params("id"),
@@ -206,13 +208,14 @@ func (h *PublicationHandler) DeletePublication(c *fiber.Ctx) error {
 
 	return response.Success(
 		c,
-		"Publication deleted successfully",
+		"Publication moved to trash successfully",
 		nil,
 	)
 }
 
-func (h *PublicationHandler) RestorePublication(c *fiber.Ctx) error {
-
+func (h *PublicationHandler) RestorePublication(
+	c *fiber.Ctx,
+) error {
 	if err := h.service.RestorePublication(
 		c.Context(),
 		c.Params("id"),
@@ -232,8 +235,9 @@ func (h *PublicationHandler) RestorePublication(c *fiber.Ctx) error {
 	)
 }
 
-func (h *PublicationHandler) PermanentDeletePublication(c *fiber.Ctx) error {
-
+func (h *PublicationHandler) PermanentDeletePublication(
+	c *fiber.Ctx,
+) error {
 	if err := h.service.PermanentDeletePublication(
 		c.Context(),
 		c.Params("id"),
@@ -253,16 +257,18 @@ func (h *PublicationHandler) PermanentDeletePublication(c *fiber.Ctx) error {
 	)
 }
 
-func (h *PublicationHandler) ListDeletedPublications(c *fiber.Ctx) error {
+func (h *PublicationHandler) ListDeletedPublications(
+	c *fiber.Ctx,
+) error {
+	page, limit := getPagination(c)
 
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+	publications, err :=
+		h.service.ListDeletedPublications(
+			c.Context(),
+			page,
+			limit,
+		)
 
-	publications, err := h.service.ListDeletedPublications(
-		c.Context(),
-		page,
-		limit,
-	)
 	if err != nil {
 		return response.Error(
 			c,
@@ -276,5 +282,78 @@ func (h *PublicationHandler) ListDeletedPublications(c *fiber.Ctx) error {
 		c,
 		"Deleted publications retrieved successfully",
 		publications,
+	)
+}
+
+func getAuthenticatedUserID(
+	c *fiber.Ctx,
+) (uuid.UUID, error) {
+	userIDValue := c.Locals("user_id")
+
+	switch userID := userIDValue.(type) {
+	case string:
+		parsedID, err := uuid.Parse(userID)
+		if err != nil {
+			return uuid.Nil, fiber.NewError(
+				fiber.StatusUnauthorized,
+				"Invalid user id",
+			)
+		}
+
+		return parsedID, nil
+
+	case uuid.UUID:
+		return userID, nil
+
+	default:
+		return uuid.Nil, fiber.NewError(
+			fiber.StatusUnauthorized,
+			"Unauthorized",
+		)
+	}
+}
+
+func getPagination(
+	c *fiber.Ctx,
+) (int, int) {
+	page, err := strconv.Atoi(
+		c.Query("page", "1"),
+	)
+	if err != nil {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(
+		c.Query("limit", "10"),
+	)
+	if err != nil {
+		limit = 10
+	}
+
+	return page, limit
+}
+
+func (h *PublicationHandler) GetPublishedPublication(
+	c *fiber.Ctx,
+) error {
+	publication, err :=
+		h.service.GetPublishedPublication(
+			c.Context(),
+			c.Params("id"),
+		)
+
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusNotFound,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"Publication retrieved successfully",
+		publication,
 	)
 }

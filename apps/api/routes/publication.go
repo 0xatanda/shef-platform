@@ -32,6 +32,7 @@ func RegisterPublicationRoutes(api fiber.Router) {
 
 	api.Get("/publications", publicationHandler.ListPublishedPublications)
 	api.Get("/publications/:id", publicationHandler.GetPublication)
+	api.Get("/publications/:id", publicationHandler.GetPublishedPublication)
 
 	admin := api.Group("/admin/publications", authMiddleware.Protect(), middleware.RequireRoles(string(models.RoleAdmin), string(models.RoleSuperAdmin)))
 	admin.Post("/", publicationHandler.CreatePublication)
@@ -42,4 +43,5 @@ func RegisterPublicationRoutes(api fiber.Router) {
 	admin.Delete("/:id", publicationHandler.DeletePublication)
 	admin.Patch("/:id/restore", publicationHandler.RestorePublication)
 	admin.Delete("/:id/permanent", publicationHandler.PermanentDeletePublication)
+	admin.Get("/:id", publicationHandler.GetPublication)
 }

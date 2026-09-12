@@ -26,14 +26,11 @@ function resolveImageUrl(url?: string | null) {
 function formatDate(date?: string | null) {
   if (!date) return "";
 
-  return new Date(date).toLocaleDateString(
-    "en-NG",
-    {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    },
-  );
+  return new Date(date).toLocaleDateString("en-NG", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 export default function Publications() {
@@ -132,66 +129,107 @@ export default function Publications() {
             !error &&
             items.length > 0 && (
               <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                {items.map((publication) => (
-                  <article
-                    key={publication.id}
-                    className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
-                  >
-                    {publication.featured_image && (
-                      <Link
-                        to={`/publications/${publication.id}`}
-                      >
-                        <img
-                          src={resolveImageUrl(
-                            publication.featured_image,
-                          )}
-                          alt={publication.title}
-                          className="h-56 w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-                          loading="lazy"
-                        />
-                      </Link>
-                    )}
+                {items.map((publication) => {
+                  const isExternal =
+                    publication.publication_source ===
+                    "external";
 
-                    <div className="p-6">
-                      <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-green-700">
-                        <span>
-                          {publication.type.replace(
-                            "_",
-                            " ",
-                          )}
-                        </span>
+                  const externalUrl =
+                    publication.external_url?.trim();
 
-                        {publication.published_at && (
-                          <>
-                            <span>•</span>
-                            <span>
-                              {formatDate(
-                                publication.published_at,
-                              )}
-                            </span>
-                          </>
+                  /*
+                   * External publications must never use
+                   * React Router. They should go directly
+                   * to the original publication.
+                   */
+                  const imageContent = publication
+                    .featured_image ? (
+                    <img
+                      src={resolveImageUrl(
+                        publication.featured_image,
+                      )}
+                      alt={publication.title}
+                      className="h-56 w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                      loading="lazy"
+                    />
+                  ) : null;
+
+                  return (
+                    <article
+                      key={publication.id}
+                      className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                    >
+                      {publication.featured_image &&
+                        (isExternal && externalUrl ? (
+                          <a
+                            href={externalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Read ${publication.title}`}
+                          >
+                            {imageContent}
+                          </a>
+                        ) : (
+                          <Link
+                            to={`/publications/${publication.id}`}
+                          >
+                            {imageContent}
+                          </Link>
+                        ))}
+
+                      <div className="p-6">
+                        <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-green-700">
+                          <span>
+                            {publication.type.replace(
+                              "_",
+                              " ",
+                            )}
+                          </span>
+
+                          {publication.published_at && (
+                            <>
+                              <span>•</span>
+
+                              <span>
+                                {formatDate(
+                                  publication.published_at,
+                                )}
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        <h2 className="mt-3 text-xl font-bold text-slate-900">
+                          {publication.title}
+                        </h2>
+
+                        {publication.summary && (
+                          <p className="mt-3 line-clamp-3 text-sm leading-6 text-gray-600">
+                            {publication.summary}
+                          </p>
+                        )}
+
+                        {isExternal && externalUrl ? (
+                          <a
+                            href={externalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-5 inline-flex font-semibold text-green-700 hover:text-green-800"
+                          >
+                            Read original publication →
+                          </a>
+                        ) : (
+                          <Link
+                            to={`/publications/${publication.id}`}
+                            className="mt-5 inline-flex font-semibold text-green-700 hover:text-green-800"
+                          >
+                            Read publication →
+                          </Link>
                         )}
                       </div>
-
-                      <h2 className="mt-3 text-xl font-bold text-slate-900">
-                        {publication.title}
-                      </h2>
-
-                      {publication.summary && (
-                        <p className="mt-3 line-clamp-3 text-sm leading-6 text-gray-600">
-                          {publication.summary}
-                        </p>
-                      )}
-
-                      <Link
-                        to={`/publications/${publication.id}`}
-                        className="mt-5 inline-flex font-semibold text-green-700 hover:text-green-800"
-                      >
-                        Read publication →
-                      </Link>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
             )}
         </div>

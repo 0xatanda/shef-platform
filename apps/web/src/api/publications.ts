@@ -10,6 +10,17 @@ export type Publication = {
   status: string;
   featured_image: string;
   author: string;
+
+  // Publication source
+  publication_source?: "shef" | "external";
+
+  // Original publication URL for external publications
+  external_url?: string | null;
+
+  // Kept for compatibility with the backend
+  external_link_text?: string | null;
+  publisher_name?: string | null;
+
   published_at?: string | null;
   published_by?: string | null;
   created_by?: string;

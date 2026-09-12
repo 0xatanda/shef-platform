@@ -44,22 +44,6 @@ type MediaRepository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-type PublicationRepository interface {
-	Create(ctx context.Context, publication *models.Publication) error
-	FindByID(ctx context.Context, id uuid.UUID) (*models.Publication, error)
-	FindBySlug(ctx context.Context, slug string) (*models.Publication, error)
-	List(ctx context.Context, page int, limit int) ([]models.Publication, int64, error)
-	ListPublished(ctx context.Context, page int, limit int) ([]models.Publication, int64, error)
-	Update(ctx context.Context, publication *models.Publication) error
-	Delete(ctx context.Context, id uuid.UUID) error
-	Restore(ctx context.Context, id uuid.UUID) error
-	PermanentDelete(ctx context.Context, id uuid.UUID) error
-	FindDeletedByID(ctx context.Context, id uuid.UUID) (*models.Publication, error)
-	ExistsBySlug(ctx context.Context, slug string) (bool, error)
-	ExistsBySlugExceptID(ctx context.Context, slug string, id uuid.UUID) (bool, error)
-	ListDeleted(ctx context.Context, page int, limit int) ([]models.Publication, int64, error)
-}
-
 type PartnerRepository interface {
 	Create(ctx context.Context, partner *models.Partner) error
 	FindByID(ctx context.Context, id uuid.UUID) (*models.Partner, error)
@@ -91,4 +75,24 @@ type ContentMediaRepository interface {
 	Update(ctx context.Context, media *models.ContentMedia) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, page int, limit int, mediaType string) ([]models.ContentMedia, int64, error)
+}
+
+type PublicationRepository interface {
+	Create(ctx context.Context, publication *models.Publication) error
+	FindByID(ctx context.Context, id uuid.UUID) (*models.Publication, error)
+	FindBySlug(ctx context.Context, slug string) (*models.Publication, error)
+	List(ctx context.Context, page int, limit int) ([]models.Publication, int64, error)
+	ListPublished(ctx context.Context, page int, limit int) ([]models.Publication, int64, error)
+	Update(ctx context.Context, publication *models.Publication) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	Restore(ctx context.Context, id uuid.UUID) error
+	PermanentDelete(ctx context.Context, id uuid.UUID) error
+	FindDeletedByID(ctx context.Context, id uuid.UUID) (*models.Publication, error)
+	ExistsBySlug(ctx context.Context, slug string) (bool, error)
+	ExistsBySlugExceptID(ctx context.Context, slug string, id uuid.UUID) (bool, error)
+	ListDeleted(ctx context.Context, page int, limit int) ([]models.Publication, int64, error)
+
+	CreateWithRelations(ctx context.Context, publication *models.Publication, media []models.PublicationMedia, blocks []models.PublicationBlock) error
+	FindPublishedByID(ctx context.Context, id uuid.UUID) (*models.Publication, error)
+	UpdateWithRelations(ctx context.Context, publication *models.Publication, media []models.PublicationMedia, blocks []models.PublicationBlock) error
 }
