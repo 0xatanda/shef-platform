@@ -6,7 +6,7 @@ type CreateDonationRequest struct {
 	Name     string  `json:"name" validate:"required,max=255"`
 	Email    string  `json:"email" validate:"required,email,max=255"`
 	Phone    string  `json:"phone" validate:"omitempty,max=50"`
-	Amount   float64 `json:"amount" validate:"required,gte=0"`
+	Amount   float64 `json:"amount" validate:"required,gt=0"`
 	Currency string  `json:"currency" validate:"omitempty,max=10"`
 	Message  string  `json:"message"`
 }

@@ -6,7 +6,9 @@ import PublicLayout from "../layouts/PublicLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AdminLayout from "../layouts/AdminLayout";
 
+// =========================
 // Public pages
+// =========================
 import Home from "../pages/public/Home";
 import About from "../pages/public/About";
 import Projects from "../pages/public/Projects";
@@ -14,15 +16,19 @@ import Publications from "../pages/public/Publications";
 import PublicationDetails from "../pages/public/PublicationDetails";
 import Contact from "../pages/public/Contact";
 import ProjectDetails from "../pages/public/ProjectDetails";
+import Donate from "../pages/public/Donate";
+import PublicMedia from "../pages/public/Media";
 
+// =========================
 // Admin pages
+// =========================
 import Dashboard from "../pages/admin/Dashboard";
 import AdminProjects from "../pages/admin/Projects";
 import AdminPublications from "../pages/admin/Publications";
 import Partners from "../pages/admin/Partners";
 import Team from "../pages/admin/Team";
 import Testimonials from "../pages/admin/Testimonials";
-import Media from "../pages/admin/Media";
+import AdminMedia from "../pages/admin/Media";
 import Contacts from "../pages/admin/Contacts";
 import Donations from "../pages/admin/Donations";
 
@@ -51,8 +57,15 @@ export default function AppRoutes() {
           element={<About />}
         />
 
-       <Route path="/projects" element={<Projects />} />
-       <Route path="/projects/:slug" element={<ProjectDetails />} />
+        <Route
+          path="/projects"
+          element={<Projects />}
+        />
+
+        <Route
+          path="/projects/:slug"
+          element={<ProjectDetails />}
+        />
 
         <Route
           path="/publications"
@@ -67,6 +80,18 @@ export default function AppRoutes() {
         <Route
           path="/contact"
           element={<Contact />}
+        />
+
+        {/* Public donation page */}
+        <Route
+          path="/donations"
+          element={<Donate />}
+        />
+
+        {/* Public media page */}
+        <Route
+          path="/media"
+          element={<PublicMedia />}
         />
       </Route>
 
@@ -118,9 +143,10 @@ export default function AppRoutes() {
             element={<Testimonials />}
           />
 
+          {/* Admin media page */}
           <Route
             path="media"
-            element={<Media />}
+            element={<AdminMedia />}
           />
 
           <Route
@@ -128,6 +154,7 @@ export default function AppRoutes() {
             element={<Contacts />}
           />
 
+          {/* Admin donation management */}
           <Route
             path="donations"
             element={<Donations />}

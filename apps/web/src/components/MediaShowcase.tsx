@@ -25,8 +25,12 @@ const API_ORIGIN =
   import.meta.env.VITE_API_ORIGIN ||
   "http://localhost:8080";
 
-function resolveImageUrl(url: string) {
-  if (!url) return "";
+function resolveImageUrl(
+  url: string,
+): string {
+  if (!url) {
+    return "";
+  }
 
   if (
     url.startsWith("http://") ||
@@ -35,36 +39,67 @@ function resolveImageUrl(url: string) {
     return url;
   }
 
+  const origin =
+    API_ORIGIN.replace(/\/$/, "");
+
   if (url.startsWith("/uploads/")) {
-    return `${API_ORIGIN}${url}`;
+    return `${origin}${url}`;
   }
 
   return url;
 }
 
 export default function MediaShowcase() {
-  const [media, setMedia] = useState<Media[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [videos, setVideos] =
+    useState<Media[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadMedia() {
+    async function loadYouTubeVideos() {
       try {
-        const response =
-          await api.get<ApiResponse>("/media", {
-            params: {
-              page: 1,
-              limit: 6,
-            },
-          });
+        setLoading(true);
 
-        if (!cancelled) {
-          setMedia(response.data.data.items);
+        /*
+         * We request more than the three displayed
+         * on the homepage because the media library
+         * contains both images and YouTube videos.
+         *
+         * We filter to YouTube videos before displaying
+         * the first three.
+         */
+        const response =
+          await api.get<ApiResponse>(
+            "/media",
+            {
+              params: {
+                page: 1,
+                limit: 50,
+              },
+            },
+          );
+
+        if (cancelled) {
+          return;
         }
+
+        const youtubeVideos =
+          (
+            response.data.data?.items ?? []
+          )
+            .filter(
+              (item) =>
+                item.type === "youtube",
+            )
+            .slice(0, 3);
+
+        setVideos(youtubeVideos);
       } catch {
         if (!cancelled) {
-          setMedia([]);
+          setVideos([]);
         }
       } finally {
         if (!cancelled) {
@@ -73,7 +108,7 @@ export default function MediaShowcase() {
       }
     }
 
-    void loadMedia();
+    void loadYouTubeVideos();
 
     return () => {
       cancelled = true;
@@ -82,88 +117,102 @@ export default function MediaShowcase() {
 
   if (loading) {
     return (
-      <section className="bg-gray-50 py-20">
-        <div className="mx-auto max-w-7xl px-4 text-center">
-          <p className="text-sm text-gray-500">
-            Loading media...
-          </p>
-        </div>
-      </section>
+      <div className="text-center text-sm text-gray-500">
+        Loading videos...
+      </div>
     );
   }
 
-  if (media.length === 0) {
-    return null;
+  /*
+   * Don't render anything when there are no
+   * YouTube videos in the media library.
+   */
+  if (videos.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
+        <p className="text-sm text-gray-500">
+          Featured videos will appear here.
+        </p>
+      </div>
+    );
   }
 
   return (
-    <section className="bg-gray-50 py-20">
-      <div className="mx-auto max-w-7xl px-4">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold text-slate-900">
-            Stories & Media
-          </h2>
+    <div className="grid gap-8 md:grid-cols-3">
+      {videos.map((item) => {
+        const thumbnail =
+          item.thumbnail_url ||
+          (item.youtube_video_id
+            ? `https://img.youtube.com/vi/${item.youtube_video_id}/hqdefault.jpg`
+            : "");
 
-          <p className="mx-auto mt-4 max-w-xl text-gray-600">
-            Explore stories, community activities, and
-            videos from SHEF and the communities we support.
-          </p>
-        </div>
+        return (
+          <article
+            key={item.id}
+            className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+          >
+            {/* Video Thumbnail */}
+            <div className="relative aspect-video overflow-hidden bg-gray-100">
+              {thumbnail ? (
+                <img
+                  src={resolveImageUrl(
+                    thumbnail,
+                  )}
+                  alt={
+                    item.alt_text ||
+                    item.title ||
+                    "SHEF YouTube video"
+                  }
+                  className="h-full w-full object-cover transition duration-500 hover:scale-105"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-gray-400">
+                  No video thumbnail
+                </div>
+              )}
 
-        <div className="mt-10 grid gap-8 md:grid-cols-3">
-          {media.map((item) => {
-            const image =
-              item.type === "youtube"
-                ? item.thumbnail_url
-                : item.url;
-
-            return (
-              <article
-                key={item.id}
-                className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+              {/* YouTube Play Button */}
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Watch ${
+                  item.title ||
+                  "SHEF YouTube video"
+                }`}
+                className="absolute inset-0 flex items-center justify-center"
               >
-                <div className="relative aspect-video overflow-hidden bg-gray-100">
-                  <img
-                    src={resolveImageUrl(image)}
-                    alt={
-                      item.alt_text ||
-                      item.title ||
-                      "SHEF media"
-                    }
-                    className="h-full w-full object-cover"
-                  />
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-700 text-xl text-white shadow-lg transition hover:scale-110 hover:bg-green-800">
+                  ▶
+                </span>
+              </a>
+            </div>
 
-                  {item.type === "youtube" && (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`Watch ${item.title}`}
-                      className="absolute inset-0 flex items-center justify-center"
-                    >
-                      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-700 text-xl text-white shadow-lg">
-                        ▶
-                      </span>
-                    </a>
-                  )}
-                </div>
+            {/* Video Information */}
+            <div className="p-5">
+              <h3 className="line-clamp-2 font-semibold text-slate-900">
+                {item.title ||
+                  "SHEF YouTube Video"}
+              </h3>
 
-                <div className="p-5">
-                  <h3 className="font-semibold text-slate-900">
-                    {item.title || "SHEF Media"}
-                  </h3>
+              {item.description && (
+                <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-600">
+                  {item.description}
+                </p>
+              )}
 
-                  {item.description && (
-                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-600">
-                      {item.description}
-                    </p>
-                  )}
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </div>
-    </section>
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-block text-sm font-semibold text-green-700 hover:text-green-800"
+              >
+                Watch video →
+              </a>
+            </div>
+          </article>
+        );
+      })}
+    </div>
   );
 }

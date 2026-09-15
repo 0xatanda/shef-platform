@@ -161,7 +161,7 @@ export default function Contact() {
               </p>
 
               <Link
-                to="/donate"
+                to="/donations"
                 className="mt-5 inline-block rounded-md bg-green-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-green-700"
               >
                 Donate or Partner with Us
