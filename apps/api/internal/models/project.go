@@ -20,7 +20,7 @@ type Project struct {
 
 	FeaturedImage string `gorm:"type:text"`
 
-	Status ProjectStatus `gorm:"size:20;default:'draft'"`
+	Status ProjectStatus `gorm:"size:20;not null;default:'draft'"`
 
 	Media []ProjectMedia `gorm:"foreignKey:ProjectID"`
 

@@ -11,14 +11,20 @@ export interface Media {
   created_at: string;
 }
 
-export function getMediaUrl(url: string) {
+export function getMediaUrl(url?: string | null) {
   if (!url) return "";
 
-  if (url.startsWith("http")) {
+  // Already an absolute URL
+  if (/^https?:\/\//i.test(url)) {
     return url;
   }
 
-  return `${API_ORIGIN}${url}`;
+  const normalizedOrigin = API_ORIGIN.replace(/\/$/, "");
+  const normalizedUrl = url.startsWith("/")
+    ? url
+    : `/${url}`;
+
+  return `${normalizedOrigin}${normalizedUrl}`;
 }
 
 export async function uploadMedia(file: File) {

@@ -21,20 +21,88 @@ type UserRepository interface {
 }
 
 type ProjectRepository interface {
-	Create(ctx context.Context, project *models.Project) error
-	Update(ctx context.Context, project *models.Project) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	Create(
+		ctx context.Context,
+		project *models.Project,
+	) error
 
-	FindByID(ctx context.Context, id uuid.UUID) (*models.Project, error)
-	FindBySlug(ctx context.Context, slug string) (*models.Project, error)
+	Update(
+		ctx context.Context,
+		project *models.Project,
+	) error
 
-	ExistsBySlug(ctx context.Context, slug string) (bool, error)
-	ExistsBySlugExceptID(ctx context.Context, slug string, id uuid.UUID) (bool, error)
-	Restore(ctx context.Context, id uuid.UUID) error
-	PermanentDelete(ctx context.Context, id uuid.UUID) error
-	FindDeletedByID(ctx context.Context, id uuid.UUID) (*models.Project, error)
-	ListDeleted(ctx context.Context, page int, limit int, search string) ([]models.Project, int64, error)
-	List(ctx context.Context, page, limit int, search, status string) ([]models.Project, int64, error)
+	Delete(
+		ctx context.Context,
+		id uuid.UUID,
+	) error
+
+	FindByID(
+		ctx context.Context,
+		id uuid.UUID,
+	) (*models.Project, error)
+
+	FindBySlug(
+		ctx context.Context,
+		slug string,
+	) (*models.Project, error)
+
+	ExistsBySlug(
+		ctx context.Context,
+		slug string,
+	) (bool, error)
+
+	ExistsBySlugExceptID(
+		ctx context.Context,
+		slug string,
+		id uuid.UUID,
+	) (bool, error)
+
+	List(
+		ctx context.Context,
+		page int,
+		limit int,
+		search string,
+		status string,
+	) ([]models.Project, int64, error)
+
+	ListPublished(
+		ctx context.Context,
+		page int,
+		limit int,
+		search string,
+	) ([]models.Project, int64, error)
+
+	FindPublishedByID(
+		ctx context.Context,
+		id uuid.UUID,
+	) (*models.Project, error)
+
+	Restore(
+		ctx context.Context,
+		id uuid.UUID,
+	) error
+
+	PermanentDelete(
+		ctx context.Context,
+		id uuid.UUID,
+	) error
+
+	ListDeleted(
+		ctx context.Context,
+		page int,
+		limit int,
+		search string,
+	) ([]models.Project, int64, error)
+
+	FindDeletedByID(
+		ctx context.Context,
+		id uuid.UUID,
+	) (*models.Project, error)
+
+	FindPublishedBySlug(
+		ctx context.Context,
+		slug string,
+	) (*models.Project, error)
 }
 
 type MediaRepository interface {

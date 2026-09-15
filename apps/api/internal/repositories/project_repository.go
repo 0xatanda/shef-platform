@@ -270,3 +270,94 @@ func (r *ProjectRepository) ExistsBySlugExceptID(
 
 	return count > 0, nil
 }
+
+func (r *ProjectRepository) ListPublished(
+	ctx context.Context,
+	page int,
+	limit int,
+	search string,
+) ([]models.Project, int64, error) {
+	var projects []models.Project
+	var total int64
+
+	query := r.db.WithContext(ctx).
+		Model(&models.Project{}).
+		Where("status = ?", models.ProjectPublished)
+
+	if search != "" {
+		searchTerm := "%" + search + "%"
+
+		query = query.Where(
+			"title ILIKE ? OR summary ILIKE ? OR content ILIKE ?",
+			searchTerm,
+			searchTerm,
+			searchTerm,
+		)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+
+	if err := query.
+		Order("published_at DESC NULLS LAST").
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&projects).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return projects, total, nil
+}
+
+func (r *ProjectRepository) FindPublishedByID(
+	ctx context.Context,
+	id uuid.UUID,
+) (*models.Project, error) {
+	var project models.Project
+
+	err := r.db.WithContext(ctx).
+		Where(
+			"id = ? AND status = ?",
+			id,
+			models.ProjectPublished,
+		).
+		First(&project).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &project, nil
+}
+
+func (r *ProjectRepository) FindPublishedBySlug(
+	ctx context.Context,
+	slug string,
+) (*models.Project, error) {
+
+	var project models.Project
+
+	err := r.db.
+		WithContext(ctx).
+		Where(
+			"slug = ? AND status = ?",
+			slug,
+			models.ProjectPublished,
+		).
+		First(&project).
+		Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+
+		return nil, err
+	}
+
+	return &project, nil
+}

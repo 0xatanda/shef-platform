@@ -13,6 +13,7 @@ import Projects from "../pages/public/Projects";
 import Publications from "../pages/public/Publications";
 import PublicationDetails from "../pages/public/PublicationDetails";
 import Contact from "../pages/public/Contact";
+import ProjectDetails from "../pages/public/ProjectDetails";
 
 // Admin pages
 import Dashboard from "../pages/admin/Dashboard";
@@ -50,10 +51,8 @@ export default function AppRoutes() {
           element={<About />}
         />
 
-        <Route
-          path="/projects"
-          element={<Projects />}
-        />
+       <Route path="/projects" element={<Projects />} />
+       <Route path="/projects/:slug" element={<ProjectDetails />} />
 
         <Route
           path="/publications"

@@ -16,18 +16,25 @@ import (
 func RegisterProjectRoutes(api fiber.Router) {
 	cfg := configs.Load()
 
-	// JWT Service
-	jwtService := auth.NewJWTService(cfg.JWTSecret)
+	jwtService := auth.NewJWTService(
+		cfg.JWTSecret,
+	)
 
-	// Middleware
-	authMiddleware := middleware.NewAuthMiddleware(jwtService)
+	authMiddleware := middleware.NewAuthMiddleware(
+		jwtService,
+	)
 
-	// Repository
-	projectRepo := repositories.NewProjectRepository(database.DB)
+	projectRepo := repositories.NewProjectRepository(
+		database.DB,
+	)
 
-	contentMediaRepo := repositories.NewContentMediaRepository(database.DB)
+	contentMediaRepo := repositories.NewContentMediaRepository(
+		database.DB,
+	)
 
-	projectMediaRepo := repositories.NewProjectMediaRepository(database.DB)
+	projectMediaRepo := repositories.NewProjectMediaRepository(
+		database.DB,
+	)
 
 	projectService := services.NewProjectService(
 		projectRepo,
@@ -35,33 +42,103 @@ func RegisterProjectRoutes(api fiber.Router) {
 		contentMediaRepo,
 	)
 
-	projectHandler := handlers.NewProjectHandler(projectService)
+	projectHandler := handlers.NewProjectHandler(
+		projectService,
+	)
 
-	api.Get("/projects", projectHandler.ListProjects)
-	api.Get("/projects/:id", projectHandler.GetProject)
+	// =====================================================
+	// PUBLIC
+	// =====================================================
 
-	admin := api.Group("/admin/projects", authMiddleware.Protect(), middleware.RequireRoles(string(models.RoleAdmin), string(models.RoleSuperAdmin)))
-	admin.Post("/", projectHandler.CreateProject)
+	api.Get(
+		"/projects",
+		projectHandler.ListPublishedProjects,
+	)
 
-	admin.Get("/", projectHandler.ListProjects)
+	api.Get(
+		"/projects/:slug",
+		projectHandler.GetPublishedProject,
+	)
 
-	admin.Get("/deleted", projectHandler.ListDeletedProjects)
+	// =====================================================
+	// ADMIN
+	// =====================================================
 
-	admin.Post("/:id/media", projectHandler.AddProjectMedia)
+	admin := api.Group(
+		"/admin/projects",
+		authMiddleware.Protect(),
+		middleware.RequireRoles(
+			string(models.RoleAdmin),
+			string(models.RoleSuperAdmin),
+		),
+	)
 
-	admin.Get("/:id/media", projectHandler.ListProjectMedia)
+	admin.Post(
+		"/",
+		projectHandler.CreateProject,
+	)
 
-	admin.Delete("/:id/media/:mediaId", projectHandler.DeleteProjectMedia)
+	admin.Get(
+		"/",
+		projectHandler.ListProjects,
+	)
 
-	admin.Patch("/:id/media/:mediaId/featured", projectHandler.SetFeaturedProjectMedia)
+	admin.Get(
+		"/deleted",
+		projectHandler.ListDeletedProjects,
+	)
 
-	admin.Patch("/:id/media/order", projectHandler.ReorderProjectMedia)
+	admin.Get(
+		"/:id",
+		projectHandler.GetProject,
+	)
 
-	admin.Get("/:id", projectHandler.GetProject)
+	admin.Put(
+		"/:id",
+		projectHandler.UpdateProject,
+	)
 
-	admin.Put("/:id", projectHandler.UpdateProject)
+	admin.Delete(
+		"/:id",
+		projectHandler.DeleteProject,
+	)
 
-	admin.Delete("/:id", projectHandler.DeleteProject)
+	admin.Patch(
+		"/:id/restore",
+		projectHandler.RestoreProject,
+	)
 
-	admin.Patch("/:id/restore", projectHandler.RestoreProject)
+	admin.Delete(
+		"/:id/permanent",
+		projectHandler.PermanentDeleteProject,
+	)
+
+	// =====================================================
+	// PROJECT MEDIA
+	// =====================================================
+
+	admin.Post(
+		"/:id/media",
+		projectHandler.AddProjectMedia,
+	)
+
+	admin.Get(
+		"/:id/media",
+		projectHandler.ListProjectMedia,
+	)
+
+	admin.Delete(
+		"/:id/media/:mediaId",
+		projectHandler.DeleteProjectMedia,
+	)
+
+	admin.Patch(
+		"/:id/media/:mediaId/featured",
+		projectHandler.SetFeaturedProjectMedia,
+	)
+
+	admin.Patch(
+		"/:id/media/order",
+		projectHandler.ReorderProjectMedia,
+	)
 }

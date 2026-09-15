@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"errors"
+	"log"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	"github.com/0xatanda/shef-platform/internal/dto"
 	"github.com/0xatanda/shef-platform/internal/services"
@@ -22,10 +25,11 @@ func NewProjectHandler(service *services.ProjectService) *ProjectHandler {
 }
 
 func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
-
 	var req dto.CreateProjectRequest
 
 	if err := c.BodyParser(&req); err != nil {
+		log.Printf("CreateProject: invalid request body: %v", err)
+
 		return response.Error(
 			c,
 			fiber.StatusBadRequest,
@@ -34,9 +38,28 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 		)
 	}
 
-	// Get authenticated user ID from JWT middleware
+	if req.Title == "" {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Project title is required",
+			nil,
+		)
+	}
+
+	if req.Content == "" {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Project content is required",
+			nil,
+		)
+	}
+
 	userIDStr, ok := c.Locals("user_id").(string)
-	if !ok {
+	if !ok || userIDStr == "" {
+		log.Printf("CreateProject: user_id missing from JWT")
+
 		return response.Error(
 			c,
 			fiber.StatusUnauthorized,
@@ -47,6 +70,12 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
+		log.Printf(
+			"CreateProject: invalid authenticated user ID %q: %v",
+			userIDStr,
+			err,
+		)
+
 		return response.Error(
 			c,
 			fiber.StatusUnauthorized,
@@ -60,12 +89,20 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 		userID,
 		req,
 	)
+
 	if err != nil {
+		log.Printf(
+			"CreateProject FAILED: title=%q user_id=%s error=%v",
+			req.Title,
+			userID.String(),
+			err,
+		)
+
 		return response.Error(
 			c,
 			fiber.StatusInternalServerError,
+			"Failed to create project",
 			err.Error(),
-			nil,
 		)
 	}
 
@@ -77,12 +114,19 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 }
 
 func (h *ProjectHandler) ListProjects(c *fiber.Ctx) error {
-
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	limit, _ := strconv.Atoi(c.Query("limit", "10"))
 
 	search := c.Query("search")
 	status := c.Query("status")
+
+	if page < 1 {
+		page = 1
+	}
+
+	if limit < 1 {
+		limit = 10
+	}
 
 	projects, err := h.service.ListProjects(
 		c.Context(),
@@ -91,12 +135,15 @@ func (h *ProjectHandler) ListProjects(c *fiber.Ctx) error {
 		search,
 		status,
 	)
+
 	if err != nil {
+		log.Printf("ListProjects FAILED: %v", err)
+
 		return response.Error(
 			c,
 			fiber.StatusInternalServerError,
+			"Failed to retrieve projects",
 			err.Error(),
-			nil,
 		)
 	}
 
@@ -108,11 +155,11 @@ func (h *ProjectHandler) ListProjects(c *fiber.Ctx) error {
 }
 
 func (h *ProjectHandler) GetProject(c *fiber.Ctx) error {
-
 	project, err := h.service.GetProject(
 		c.Context(),
 		c.Params("id"),
 	)
+
 	if err != nil {
 		return response.Error(
 			c,
@@ -130,7 +177,6 @@ func (h *ProjectHandler) GetProject(c *fiber.Ctx) error {
 }
 
 func (h *ProjectHandler) UpdateProject(c *fiber.Ctx) error {
-
 	var req dto.UpdateProjectRequest
 
 	if err := c.BodyParser(&req); err != nil {
@@ -142,9 +188,8 @@ func (h *ProjectHandler) UpdateProject(c *fiber.Ctx) error {
 		)
 	}
 
-	// Get authenticated user ID from JWT middleware
 	userIDStr, ok := c.Locals("user_id").(string)
-	if !ok {
+	if !ok || userIDStr == "" {
 		return response.Error(
 			c,
 			fiber.StatusUnauthorized,
@@ -169,7 +214,14 @@ func (h *ProjectHandler) UpdateProject(c *fiber.Ctx) error {
 		userID,
 		req,
 	)
+
 	if err != nil {
+		log.Printf(
+			"UpdateProject FAILED: project_id=%s error=%v",
+			c.Params("id"),
+			err,
+		)
+
 		return response.Error(
 			c,
 			fiber.StatusBadRequest,
@@ -186,14 +238,12 @@ func (h *ProjectHandler) UpdateProject(c *fiber.Ctx) error {
 }
 
 func (h *ProjectHandler) DeleteProject(c *fiber.Ctx) error {
-
 	err := h.service.DeleteProject(
 		c.Context(),
 		c.Params("id"),
 	)
 
 	if err != nil {
-
 		if err.Error() == "invalid project id" {
 			return response.Error(
 				c,
@@ -212,6 +262,12 @@ func (h *ProjectHandler) DeleteProject(c *fiber.Ctx) error {
 			)
 		}
 
+		log.Printf(
+			"DeleteProject FAILED: project_id=%s error=%v",
+			c.Params("id"),
+			err,
+		)
+
 		return response.Error(
 			c,
 			fiber.StatusInternalServerError,
@@ -228,7 +284,6 @@ func (h *ProjectHandler) DeleteProject(c *fiber.Ctx) error {
 }
 
 func (h *ProjectHandler) RestoreProject(c *fiber.Ctx) error {
-
 	err := h.service.RestoreProject(
 		c.Context(),
 		c.Params("id"),
@@ -251,14 +306,12 @@ func (h *ProjectHandler) RestoreProject(c *fiber.Ctx) error {
 }
 
 func (h *ProjectHandler) PermanentDeleteProject(c *fiber.Ctx) error {
-
 	err := h.service.PermanentDeleteProject(
 		c.Context(),
 		c.Params("id"),
 	)
 
 	if err != nil {
-
 		if err.Error() == "invalid project id" {
 			return response.Error(
 				c,
@@ -277,6 +330,12 @@ func (h *ProjectHandler) PermanentDeleteProject(c *fiber.Ctx) error {
 			)
 		}
 
+		log.Printf(
+			"PermanentDeleteProject FAILED: project_id=%s error=%v",
+			c.Params("id"),
+			err,
+		)
+
 		return response.Error(
 			c,
 			fiber.StatusInternalServerError,
@@ -293,7 +352,6 @@ func (h *ProjectHandler) PermanentDeleteProject(c *fiber.Ctx) error {
 }
 
 func (h *ProjectHandler) ListDeletedProjects(c *fiber.Ctx) error {
-
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	limit, _ := strconv.Atoi(c.Query("limit", "10"))
 	search := c.Query("search")
@@ -312,12 +370,15 @@ func (h *ProjectHandler) ListDeletedProjects(c *fiber.Ctx) error {
 		limit,
 		search,
 	)
+
 	if err != nil {
+		log.Printf("ListDeletedProjects FAILED: %v", err)
+
 		return response.Error(
 			c,
 			fiber.StatusInternalServerError,
+			"Failed to retrieve deleted projects",
 			err.Error(),
-			nil,
 		)
 	}
 
@@ -341,7 +402,7 @@ func (h *ProjectHandler) AddProjectMedia(c *fiber.Ctx) error {
 	}
 
 	userIDStr, ok := c.Locals("user_id").(string)
-	if !ok {
+	if !ok || userIDStr == "" {
 		return response.Error(
 			c,
 			fiber.StatusUnauthorized,
@@ -366,7 +427,15 @@ func (h *ProjectHandler) AddProjectMedia(c *fiber.Ctx) error {
 		userID,
 		req,
 	)
+
 	if err != nil {
+		log.Printf(
+			"AddProjectMedia FAILED: project_id=%s media_id=%s error=%v",
+			c.Params("id"),
+			req.MediaID,
+			err,
+		)
+
 		return response.Error(
 			c,
 			fiber.StatusBadRequest,
@@ -387,6 +456,7 @@ func (h *ProjectHandler) ListProjectMedia(c *fiber.Ctx) error {
 		c.Context(),
 		c.Params("id"),
 	)
+
 	if err != nil {
 		return response.Error(
 			c,
@@ -409,6 +479,7 @@ func (h *ProjectHandler) DeleteProjectMedia(c *fiber.Ctx) error {
 		c.Params("id"),
 		c.Params("mediaId"),
 	)
+
 	if err != nil {
 		return response.Error(
 			c,
@@ -431,6 +502,7 @@ func (h *ProjectHandler) SetFeaturedProjectMedia(c *fiber.Ctx) error {
 		c.Params("id"),
 		c.Params("mediaId"),
 	)
+
 	if err != nil {
 		return response.Error(
 			c,
@@ -464,6 +536,7 @@ func (h *ProjectHandler) ReorderProjectMedia(c *fiber.Ctx) error {
 		c.Params("id"),
 		req,
 	)
+
 	if err != nil {
 		return response.Error(
 			c,
@@ -478,4 +551,73 @@ func (h *ProjectHandler) ReorderProjectMedia(c *fiber.Ctx) error {
 		"Project media order updated successfully",
 		nil,
 	)
+}
+
+func (h *ProjectHandler) ListPublishedProjects(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+	search := c.Query("search")
+
+	result, err := h.service.ListPublishedProjects(
+		c.Context(),
+		page,
+		limit,
+		search,
+	)
+
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusInternalServerError,
+			err.Error(),
+			nil,
+		)
+	}
+
+	return response.Success(
+		c,
+		"Projects retrieved successfully",
+		result,
+	)
+}
+
+func (h *ProjectHandler) GetPublishedProject(c *fiber.Ctx) error {
+	slug := c.Params("slug")
+
+	if slug == "" {
+		return fiber.NewError(
+			fiber.StatusBadRequest,
+			"project slug is required",
+		)
+	}
+
+	project, err := h.service.GetPublishedProject(
+		c.Context(),
+		slug,
+	)
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fiber.NewError(
+				fiber.StatusNotFound,
+				"project not found",
+			)
+		}
+
+		log.Printf(
+			"GetPublishedProject error: %v",
+			err,
+		)
+
+		return fiber.NewError(
+			fiber.StatusInternalServerError,
+			"unable to load project",
+		)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Project retrieved successfully",
+		"data":    project,
+	})
 }

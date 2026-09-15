@@ -1,19 +1,29 @@
 import api from "./client";
 
-export interface Project {
+export type ProjectMedia = {
+  id: string;
+  media_id: string;
+  url: string;
+  alt_text: string;
+  sort_order: number;
+  is_featured: boolean;
+};
+
+export type Project = {
   id: string;
   title: string;
-  slug?: string;
-  description?: string;
-  content?: string;
-  image_url?: string;
-  status?: string;
-  location?: string;
+  slug: string;
+  summary: string;
+  content: string;
+  featured_image: string;
+  status: "draft" | "published";
+  media: ProjectMedia[];
+  published_at?: string | null;
   created_at?: string;
   updated_at?: string;
-}
+};
 
-export interface ProjectListResponse {
+export type ProjectListResponse = {
   success: boolean;
   message: string;
   data: {
@@ -25,18 +35,31 @@ export interface ProjectListResponse {
       total_pages: number;
     };
   };
-}
+};
 
-export async function getProjects() {
+export type ProjectResponse = {
+  success: boolean;
+  message: string;
+  data: Project;
+};
+
+export async function getProjects(
+  page = 1,
+  limit = 10,
+) {
   const response =
-    await api.get<ProjectListResponse>("/projects");
+    await api.get<ProjectListResponse>(
+      `/projects?page=${page}&limit=${limit}`,
+    );
 
   return response.data;
 }
 
-export async function getProject(id: string) {
+export async function getProject(
+  id: string,
+) {
   const response =
-    await api.get<{ success: boolean; data: Project }>(
+    await api.get<ProjectResponse>(
       `/projects/${id}`,
     );
 
