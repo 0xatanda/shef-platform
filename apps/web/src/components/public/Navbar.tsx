@@ -41,13 +41,6 @@ export default function Navbar() {
                 {link.label}
               </NavLink>
             ))}
-
-            <Link
-              to="/donate"
-              className="bg-green-600 text-white px-5 py-2.5 rounded-md font-medium hover:bg-green-700 transition"
-            >
-              Support Us
-            </Link>
           </nav>
 
           <button
@@ -81,14 +74,6 @@ export default function Navbar() {
                   {link.label}
                 </NavLink>
               ))}
-
-              <Link
-                to="/donate"
-                onClick={() => setOpen(false)}
-                className="block mt-3 bg-green-600 text-white text-center px-5 py-3 rounded-md"
-              >
-                Support Us
-              </Link>
             </div>
           </nav>
         )}

@@ -8,9 +8,11 @@ import MediaShowcase from "../../components/MediaShowcase";
 type Partner = {
   id: string;
   name: string;
-  logo_url?: string;
-  website_url?: string;
-  is_active?: boolean;
+  logo: string;
+  website: string;
+  description?: string;
+  display_order: number;
+  is_active: boolean;
 };
 
 type Project = {
@@ -24,37 +26,19 @@ type Project = {
   is_active?: boolean;
 };
 
-type ApiListResponse<T> = {
+type ProjectListResponse = {
   success: boolean;
   message?: string;
   data?: {
-    items?: T[];
+    items?: Project[];
   };
 };
 
-const fallbackPartners: Partner[] = [
-  {
-    id: "sdi",
-    name: "SDI",
-    logo_url: "/partners/sdi.jpg",
-    website_url: "",
-    is_active: true,
-  },
-  {
-    id: "hbs",
-    name: "Heinrich Böll Stiftung",
-    logo_url: "/partners/hbs.jpg",
-    website_url: "",
-    is_active: true,
-  },
-  {
-    id: "acrc",
-    name: "ACRC",
-    logo_url: "/partners/acrc.jpg",
-    website_url: "",
-    is_active: true,
-  },
-];
+type PartnerListResponse = {
+  success: boolean;
+  message?: string;
+  data?: Partner[];
+};
 
 const metrics = [
   {
@@ -79,19 +63,26 @@ const metrics = [
   },
 ];
 
-
 const API_ORIGIN =
-  import.meta.env.VITE_API_ORIGIN || "http://localhost:8080";
+  import.meta.env.VITE_API_ORIGIN ||
+  "http://localhost:8080";
 
-function resolveImageUrl(url?: string) {
-  if (!url) return "";
+function resolveImageUrl(url?: string | null) {
+  if (!url) {
+    return "";
+  }
 
-  if (url.startsWith("http://") || url.startsWith("https://")) {
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://")
+  ) {
     return url;
   }
 
+  const origin = API_ORIGIN.replace(/\/$/, "");
+
   if (url.startsWith("/uploads/")) {
-    return `${API_ORIGIN}${url}`;
+    return `${origin}${url}`;
   }
 
   return url;
@@ -100,29 +91,39 @@ function resolveImageUrl(url?: string) {
 export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
-  const [loadingProjects, setLoadingProjects] = useState(true);
-  const [loadingPartners, setLoadingPartners] = useState(true);
+
+  const [loadingProjects, setLoadingProjects] =
+    useState(true);
+
+  const [loadingPartners, setLoadingPartners] =
+    useState(true);
 
   useEffect(() => {
     document.title =
       "Home | Shantytown Empowerment Foundation";
   }, []);
 
+  /*
+   * PROJECTS
+   */
   useEffect(() => {
     let cancelled = false;
 
     async function fetchHomeProjects() {
       try {
         const response =
-          await api.get<ApiListResponse<Project>>(
+          await api.get<ProjectListResponse>(
             "/projects",
           );
 
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         if (response.data.success) {
           setProjects(
-            response.data.data?.items?.slice(0, 3) ?? [],
+            response.data.data?.items?.slice(0, 3) ??
+              [],
           );
         }
       } catch {
@@ -143,25 +144,56 @@ export default function Home() {
     };
   }, []);
 
+  /*
+   * PARTNERS
+   *
+   * The public API returns:
+   *
+   * {
+   *   success: true,
+   *   data: [...]
+   * }
+   *
+   * It does NOT return:
+   *
+   * data: {
+   *   items: [...]
+   * }
+   */
   useEffect(() => {
     let cancelled = false;
 
     async function fetchHomePartners() {
       try {
         const response =
-          await api.get<ApiListResponse<Partner>>(
+          await api.get<PartnerListResponse>(
             "/partners",
           );
 
-        if (cancelled) return;
-
-        if (response.data.success) {
-          setPartners(
-            response.data.data?.items?.filter(
-              (partner) => partner.is_active !== false,
-            ) ?? [],
-          );
+        if (cancelled) {
+          return;
         }
+
+        if (!response.data.success) {
+          setPartners([]);
+          return;
+        }
+
+        const activePartners = (
+          response.data.data ?? []
+        )
+          .filter(
+            (partner) =>
+              partner.is_active !== false,
+          )
+          .sort(
+            (a, b) =>
+              a.display_order -
+                b.display_order ||
+              a.name.localeCompare(b.name),
+          );
+
+        setPartners(activePartners);
       } catch {
         if (!cancelled) {
           setPartners([]);
@@ -180,21 +212,6 @@ export default function Home() {
     };
   }, []);
 
-  /*
-   * IMPORTANT:
-   * fallbackPartners is already Partner[].
-   * Do not map it to a different object shape.
-   *
-   * This preserves:
-   * - logo_url
-   * - website_url
-   * - is_active
-   */
-  const displayedPartners: Partner[] =
-    partners.length > 0
-      ? partners
-      : fallbackPartners;
-
   return (
     <>
       {/* HERO */}
@@ -206,25 +223,26 @@ export default function Home() {
             </h1>
 
             <p className="mx-auto mt-6 max-w-xl leading-7 text-gray-600 md:mx-0">
-              SHEF is a dedicated non-governmental organization
-              supporting the Nigeria Slum/Informal Settlement
-              Federation (NSISF), committed to empowering
-              marginalized and deprived communities through
-              social and economic transformation initiatives
-              aimed at improving livelihoods, promoting
-              sustainable development, and fostering inclusive
-              growth across Nigeria.
+              SHEF is a dedicated non-governmental
+              organization supporting the Nigeria
+              Slum/Informal Settlement Federation
+              (NSISF), committed to empowering
+              marginalized and deprived communities
+              through social and economic transformation
+              initiatives aimed at improving livelihoods,
+              promoting sustainable development, and
+              fostering inclusive growth across Nigeria.
             </p>
 
             <p className="mx-auto mt-4 max-w-xl leading-7 text-gray-600 md:mx-0">
               SHEF and the Nigeria Federation are Nigeria
-              affiliates of Slum Dwellers International (SDI).
-              Through partnerships, advocacy, and
-              community-driven projects, SHEF works to address
-              critical needs in housing, water, sanitation,
-              health, and economic empowerment, helping
-              communities build resilience and achieve lasting
-              progress.
+              affiliates of Slum Dwellers International
+              (SDI). Through partnerships, advocacy, and
+              community-driven projects, SHEF works to
+              address critical needs in housing, water,
+              sanitation, health, and economic empowerment,
+              helping communities build resilience and
+              achieve lasting progress.
             </p>
 
             <div className="mt-8 flex flex-wrap justify-center gap-4 md:justify-start">
@@ -259,30 +277,31 @@ export default function Home() {
 
           <p className="mx-auto mt-4 max-w-xl text-center text-gray-600">
             Through community savings, data collection,
-            advocacy, and partnerships, SHEF supports informal
-            settlement communities to lead their own
-            development and influence inclusive policies.
+            advocacy, and partnerships, SHEF supports
+            informal settlement communities to lead their
+            own development and influence inclusive
+            policies.
           </p>
 
-            <div className="mt-12 grid grid-cols-2 gap-6 md:grid-cols-4">
-                {metrics.map((metric) => (
-                    <div
-                    key={metric.label}
-                    className="rounded-lg border border-gray-200 bg-white p-6 text-center"
-                    >
-                    <div className="text-3xl font-bold text-green-700">
-                        <AnimatedNumber
-                        value={metric.value}
-                        suffix={metric.suffix}
-                        />
-                    </div>
+          <div className="mt-12 grid grid-cols-2 gap-6 md:grid-cols-4">
+            {metrics.map((metric) => (
+              <div
+                key={metric.label}
+                className="rounded-lg border border-gray-200 bg-white p-6 text-center"
+              >
+                <div className="text-3xl font-bold text-green-700">
+                  <AnimatedNumber
+                    value={metric.value}
+                    suffix={metric.suffix}
+                  />
+                </div>
 
-                    <div className="mt-2 text-sm text-gray-600">
-                        {metric.label}
-                    </div>
-                    </div>
-                ))}
-            </div>
+                <div className="mt-2 text-sm text-gray-600">
+                  {metric.label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -297,8 +316,9 @@ export default function Home() {
 
               <p className="mt-4 max-w-xl text-gray-600">
                 Community-led initiatives supporting
-                inclusive development, improved livelihoods,
-                and resilient informal settlements.
+                inclusive development, improved
+                livelihoods, and resilient informal
+                settlements.
               </p>
             </div>
 
@@ -316,61 +336,63 @@ export default function Home() {
             </div>
           )}
 
-          {!loadingProjects && projects.length > 0 && (
-            <div className="mt-10 grid gap-8 md:grid-cols-3">
-              {projects.map((project) => (
-                <a
-                  key={project.id}
-                  href={`/projects/${
-                    project.slug || project.id
-                  }`}
-                  className="group overflow-hidden rounded-xl border border-gray-200 bg-white transition hover:-translate-y-1 hover:shadow-lg"
-                >
-                  {project.image_url && (
-                    <img
-                      src={resolveImageUrl(
-                        project.image_url,
-                      )}
-                      alt={
-                        project.title ||
-                        project.name ||
-                        "SHEF project"
-                      }
-                      className="h-56 w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  )}
-
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold text-slate-900">
-                      {project.title ||
-                        project.name ||
-                        "Untitled project"}
-                    </h3>
-
-                    {(project.summary ||
-                      project.description) && (
-                      <p className="mt-3 line-clamp-3 text-sm leading-6 text-gray-600">
-                        {project.summary ||
-                          project.description}
-                      </p>
+          {!loadingProjects &&
+            projects.length > 0 && (
+              <div className="mt-10 grid gap-8 md:grid-cols-3">
+                {projects.map((project) => (
+                  <a
+                    key={project.id}
+                    href={`/projects/${
+                      project.slug || project.id
+                    }`}
+                    className="group overflow-hidden rounded-xl border border-gray-200 bg-white transition hover:-translate-y-1 hover:shadow-lg"
+                  >
+                    {project.image_url && (
+                      <img
+                        src={resolveImageUrl(
+                          project.image_url,
+                        )}
+                        alt={
+                          project.title ||
+                          project.name ||
+                          "SHEF project"
+                        }
+                        className="h-56 w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
                     )}
 
-                    <span className="mt-5 inline-block text-sm font-semibold text-green-700">
-                      Learn more →
-                    </span>
-                  </div>
-                </a>
-              ))}
-            </div>
-          )}
+                    <div className="p-6">
+                      <h3 className="text-lg font-semibold text-slate-900">
+                        {project.title ||
+                          project.name ||
+                          "Untitled project"}
+                      </h3>
 
-          {!loadingProjects && projects.length === 0 && (
-            <div className="mt-10 rounded-xl border border-gray-200 bg-white p-8 text-center">
-              <p className="text-sm text-gray-500">
-                Our latest projects will appear here.
-              </p>
-            </div>
-          )}
+                      {(project.summary ||
+                        project.description) && (
+                        <p className="mt-3 line-clamp-3 text-sm leading-6 text-gray-600">
+                          {project.summary ||
+                            project.description}
+                        </p>
+                      )}
+
+                      <span className="mt-5 inline-block text-sm font-semibold text-green-700">
+                        Learn more →
+                      </span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+
+          {!loadingProjects &&
+            projects.length === 0 && (
+              <div className="mt-10 rounded-xl border border-gray-200 bg-white p-8 text-center">
+                <p className="text-sm text-gray-500">
+                  Our latest projects will appear here.
+                </p>
+              </div>
+            )}
 
           <a
             href="/projects"
@@ -381,6 +403,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* MEDIA */}
       <MediaShowcase />
 
       {/* PARTNERS */}
@@ -392,17 +415,21 @@ export default function Home() {
 
           <p className="mx-auto mt-4 max-w-xl text-center text-gray-600">
             We collaborate with trusted institutions,
-            academic partners, and community networks to drive
-            sustainable and inclusive impact.
+            academic partners, and community networks to
+            drive sustainable and inclusive impact.
           </p>
 
           {loadingPartners ? (
             <div className="mt-12 text-center text-sm text-gray-500">
               Loading partners...
             </div>
+          ) : partners.length === 0 ? (
+            <div className="mt-12 text-center text-sm text-gray-500">
+              Our partners will appear here.
+            </div>
           ) : (
             <motion.div
-              className="mt-12 flex flex-wrap items-center justify-center gap-10"
+              className="mt-12 grid grid-cols-2 items-center gap-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
@@ -410,56 +437,70 @@ export default function Home() {
                 hidden: {},
                 visible: {
                   transition: {
-                    staggerChildren: 0.2,
+                    staggerChildren: 0.12,
                   },
                 },
               }}
             >
-              {displayedPartners.map((partner) => (
-                <motion.div
-                  key={partner.id}
-                  className="flex items-center justify-center"
-                  variants={{
-                    hidden: {
-                      opacity: 0,
-                      y: 20,
-                    },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                    },
-                  }}
-                  transition={{
-                    duration: 0.6,
-                    ease: "easeOut",
-                  }}
-                >
-                  {partner.website_url ? (
-                    <a
-                      href={partner.website_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={partner.name}
-                    >
+              {partners.map((partner) => {
+                const logoUrl = resolveImageUrl(
+                  partner.logo,
+                );
+
+                const logo = (
+                  <div className="flex h-32 w-full items-center justify-center rounded-xl border border-gray-100 bg-white p-5 transition hover:-translate-y-1 hover:shadow-md">
+                    {logoUrl ? (
                       <img
-                        src={resolveImageUrl(
-                          partner.logo_url,
-                        )}
-                        alt={partner.name}
-                        className="h-16 w-auto object-contain"
+                        src={logoUrl}
+                        alt={
+                          partner.name ||
+                          "SHEF partner"
+                        }
+                        className="max-h-24 max-w-full object-contain"
                       />
-                    </a>
-                  ) : (
-                    <img
-                      src={resolveImageUrl(
-                        partner.logo_url,
-                      )}
-                      alt={partner.name}
-                      className="h-16 w-auto object-contain"
-                    />
-                  )}
-                </motion.div>
-              ))}
+                    ) : (
+                      <span className="text-center text-sm font-semibold text-gray-700">
+                        {partner.name}
+                      </span>
+                    )}
+                  </div>
+                );
+
+                return (
+                  <motion.div
+                    key={partner.id}
+                    variants={{
+                      hidden: {
+                        opacity: 0,
+                        y: 20,
+                      },
+                      visible: {
+                        opacity: 1,
+                        y: 0,
+                      },
+                    }}
+                    transition={{
+                      duration: 0.5,
+                      ease: "easeOut",
+                    }}
+                  >
+                    {partner.website ? (
+                      <a
+                        href={partner.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={partner.name}
+                        title={partner.name}
+                        className="block"
+                      >
+                        {logo}
+                      </a>
+                    ) : (
+                      logo
+                    )}
+                  </motion.div>
+                );
+              })}
             </motion.div>
           )}
         </div>
