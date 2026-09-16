@@ -11,6 +11,10 @@ const navigation = [
     path: "/admin/dashboard",
   },
   {
+    label: "Site Content",
+    path: "/admin/content",
+  },
+  {
     label: "Projects",
     path: "/admin/projects",
   },
@@ -71,6 +75,7 @@ export default function AdminLayout() {
             <p className="text-sm font-bold text-slate-900">
               SHEF
             </p>
+
             <p className="text-xs text-slate-500">
               Administration
             </p>

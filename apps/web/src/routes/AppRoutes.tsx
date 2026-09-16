@@ -31,6 +31,8 @@ import Testimonials from "../pages/admin/Testimonials";
 import AdminMedia from "../pages/admin/Media";
 import Contacts from "../pages/admin/Contacts";
 import Donations from "../pages/admin/Donations";
+import SiteContent from "../pages/admin/SiteContent";
+
 
 export default function AppRoutes() {
   return (
@@ -158,6 +160,11 @@ export default function AppRoutes() {
           <Route
             path="donations"
             element={<Donations />}
+          />
+
+          <Route 
+            path="content" 
+            element={<SiteContent />} 
           />
         </Route>
       </Route>

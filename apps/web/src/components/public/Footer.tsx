@@ -181,10 +181,10 @@ export default function Footer() {
 
           <p className="mt-3 text-sm">
             <a
-              href="mailto:shantytownfoundation@gmail.com"
+              href="mailto:info@shefempower.org"
               className="text-green-700 transition hover:underline"
             >
-              shantytownfoundation@gmail.com
+              info@shefempower.org
             </a>
           </p>
         </div>

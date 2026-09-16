@@ -83,16 +83,7 @@ function resolveImageUrl(
   return url;
 }
 
-/*
- * Default homepage content.
- *
- * These values are used when a corresponding
- * Site Content record does not yet exist.
- */
-const defaultContent: Record<
-  string,
-  string
-> = {
+const defaultContent: Record<string, string> = {
   "home.hero.title":
     "Shantytown Empowerment Foundation",
 
@@ -206,10 +197,7 @@ export default function Home() {
   }, []);
 
   /*
-   * LOAD SITE CONTENT
-   *
-   * Public endpoint:
-   * GET /api/v1/content/:key
+   * LOAD HOME CMS CONTENT
    */
   useEffect(() => {
     let cancelled = false;
@@ -218,43 +206,46 @@ export default function Home() {
       const keys =
         Object.keys(defaultContent);
 
-      const results =
-        await Promise.all(
-          keys.map(async (key) => {
-            try {
-              const response =
-                await api.get<SiteContentResponse>(
-                  `/content/${encodeURIComponent(
-                    key,
-                  )}`,
-                );
-
-              if (
-                response.data.success &&
-                response.data.data
-              ) {
-                return {
+      const results = await Promise.all(
+        keys.map(async (key) => {
+          try {
+            const response =
+              await api.get<SiteContentResponse>(
+                `/content/${encodeURIComponent(
                   key,
-                  value:
-                    response.data.data
-                      .content ||
-                    response.data.data.title ||
-                    defaultContent[key],
-                };
-              }
-            } catch {
-              /*
-               * The CMS record may not exist yet.
-               * Use the homepage default.
-               */
+                )}`,
+              );
+
+            if (
+              response.data.success &&
+              response.data.data
+            ) {
+              return {
+                key,
+                value:
+                  response.data.data.content ||
+                  response.data.data.title ||
+                  defaultContent[key],
+              };
             }
 
             return {
               key,
               value: defaultContent[key],
             };
-          }),
-        );
+          } catch (error: unknown) {
+            console.error(
+              `Failed to load Home CMS content: ${key}`,
+              error,
+            );
+
+            return {
+              key,
+              value: defaultContent[key],
+            };
+          }
+        }),
+      );
 
       if (cancelled) {
         return;
@@ -308,7 +299,12 @@ export default function Home() {
         } else {
           setProjects([]);
         }
-      } catch {
+      } catch (error: unknown) {
+        console.error(
+          "Failed to load homepage projects",
+          error,
+        );
+
         if (!cancelled) {
           setProjects([]);
         }
@@ -365,7 +361,12 @@ export default function Home() {
           );
 
         setPartners(activePartners);
-      } catch {
+      } catch (error: unknown) {
+        console.error(
+          "Failed to load homepage partners",
+          error,
+        );
+
         if (!cancelled) {
           setPartners([]);
         }
@@ -383,9 +384,6 @@ export default function Home() {
     };
   }, []);
 
-  /*
-   * GET CMS CONTENT
-   */
   function getContent(
     key: string,
   ): string {
@@ -396,16 +394,13 @@ export default function Home() {
     );
   }
 
-  /*
-   * IMPACT METRICS
-   */
   const metrics = [
     {
       value:
         Number(
           getContent(
             "home.impact.savings_groups",
-          ),
+          ).replace(/[^\d.-]/g, ""),
         ) ||
         metricDefaults[0].value,
 
@@ -423,7 +418,7 @@ export default function Home() {
         Number(
           getContent(
             "home.impact.communities",
-          ),
+          ).replace(/[^\d.-]/g, ""),
         ) ||
         metricDefaults[1].value,
 
@@ -441,7 +436,7 @@ export default function Home() {
         Number(
           getContent(
             "home.impact.households",
-          ),
+          ).replace(/[^\d.-]/g, ""),
         ) ||
         metricDefaults[2].value,
 
@@ -459,7 +454,7 @@ export default function Home() {
         Number(
           getContent(
             "home.impact.years",
-          ),
+          ).replace(/[^\d.-]/g, ""),
         ) ||
         metricDefaults[3].value,
 
