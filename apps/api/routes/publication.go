@@ -19,7 +19,9 @@ func RegisterPublicationRoutes(api fiber.Router) {
 
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 
-	authMiddleware := middleware.NewAuthMiddleware(jwtService)
+	authMiddleware := newAuthMiddleware(
+		jwtService,
+	)
 
 	publicationRepo :=
 		repositories.NewPublicationRepository(database.DB)

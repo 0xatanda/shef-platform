@@ -13,62 +13,117 @@ import (
 type Container struct {
 	Config *configs.Config
 
-	// repositories
-	UserRepo         *repositories.UserRepository
-	RefreshTokenRepo *repositories.RefreshTokenRepository
+	// Repositories
+	UserRepo          *repositories.UserRepository
+	RefreshTokenRepo  *repositories.RefreshTokenRepository
+	UserSessionRepo   *repositories.UserSessionRepository
+	PasswordResetRepo *repositories.PasswordResetRepository
 
-	// services
+	// Services
 	AuthService  *services.AuthService
 	AdminService *services.AdminService
 
-	// handlers
+	// Handlers
 	AuthHandler  *handlers.AuthHandler
 	AdminHandler *handlers.AdminHandler
 
-	// middleware
+	// Middleware
 	AuthMiddleware *middleware.AuthMiddleware
 }
 
 func NewContainer() *Container {
-
 	cfg := configs.Load()
 
 	db := database.DB
 
-	// repositories
+	// ============================================================
+	// Repositories
+	// ============================================================
+
 	userRepo := repositories.NewUserRepository(db)
-	refreshRepo := repositories.NewRefreshTokenRepository(db)
 
-	// jwt
-	jwt := auth.NewJWTService(cfg.JWTSecret)
+	refreshRepo :=
+		repositories.NewRefreshTokenRepository(db)
 
-	// services
-	authService := services.NewAuthService(
-		userRepo,
-		refreshRepo,
-		jwt,
-	)
+	sessionRepo :=
+		repositories.NewUserSessionRepository(db)
 
-	adminService := services.NewAdminService(userRepo)
+	passwordResetRepo :=
+		repositories.NewPasswordResetRepository(db)
 
-	// handlers
-	authHandler := handlers.NewAuthHandler(authService)
-	adminHandler := handlers.NewAdminHandler(adminService)
+	// ============================================================
+	// JWT
+	// ============================================================
 
-	// middleware
-	authMiddleware := middleware.NewAuthMiddleware(jwt)
+	jwtService :=
+		auth.NewJWTService(
+			cfg.JWTSecret,
+		)
+
+	// ============================================================
+	// Services
+	// ============================================================
+
+	authService :=
+		services.NewAuthService(
+			userRepo,
+			sessionRepo,
+			passwordResetRepo,
+			jwtService,
+		)
+
+	adminService :=
+		services.NewAdminService(
+			userRepo,
+		)
+
+	// ============================================================
+	// Middleware
+	// ============================================================
+
+	authMiddleware :=
+		middleware.NewAuthMiddleware(
+			jwtService,
+			sessionRepo,
+			userRepo,
+		)
+
+	// ============================================================
+	// Handlers
+	// ============================================================
+
+	authHandler :=
+		handlers.NewAuthHandler(
+			authService,
+		)
+
+	adminHandler :=
+		handlers.NewAdminHandler(
+			adminService,
+		)
+
+	// ============================================================
+	// Container
+	// ============================================================
 
 	return &Container{
 		Config: cfg,
 
-		UserRepo:         userRepo,
-		RefreshTokenRepo: refreshRepo,
+		// Repositories
+		UserRepo:          userRepo,
+		RefreshTokenRepo:  refreshRepo,
+		UserSessionRepo:   sessionRepo,
+		PasswordResetRepo: passwordResetRepo,
 
-		AuthService: authService,
+		// Services
+		AuthService:  authService,
+		AdminService: adminService,
 
+		// Handlers
 		AuthHandler:  authHandler,
 		AdminHandler: adminHandler,
 
+		// Middleware
 		AuthMiddleware: authMiddleware,
 	}
 }

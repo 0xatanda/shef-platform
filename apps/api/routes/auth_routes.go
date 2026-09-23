@@ -12,34 +12,89 @@ import (
 	"github.com/0xatanda/shef-platform/pkg/database"
 )
 
-func RegisterAuthRoutes(api fiber.Router) {
+func RegisterAuthRoutes(
+	api fiber.Router,
+) {
 
 	cfg := configs.Load()
 
-	userRepo := repositories.NewUserRepository(database.DB)
-	refreshRepo := repositories.NewRefreshTokenRepository(database.DB)
+	userRepo := repositories.NewUserRepository(
+		database.DB,
+	)
 
-	jwtService := auth.NewJWTService(cfg.JWTSecret)
+	sessionRepo :=
+		repositories.NewUserSessionRepository(
+			database.DB,
+		)
+
+	passwordResetRepo :=
+		repositories.NewPasswordResetRepository(
+			database.DB,
+		)
+
+	jwtService := auth.NewJWTService(
+		cfg.JWTSecret,
+	)
 
 	authService := services.NewAuthService(
 		userRepo,
-		refreshRepo,
+		sessionRepo,
+		passwordResetRepo,
 		jwtService,
 	)
 
-	authHandler := handlers.NewAuthHandler(authService)
+	authHandler := handlers.NewAuthHandler(
+		authService,
+	)
 
-	authMiddleware := middleware.NewAuthMiddleware(jwtService)
+	authMiddleware :=
+		middleware.NewAuthMiddleware(
+			jwtService,
+			sessionRepo,
+			userRepo,
+		)
 
 	auth := api.Group("/auth")
 
-	auth.Post("/login", authHandler.Login)
-	auth.Post("/refresh", authHandler.Refresh)
-	auth.Post("/logout", authHandler.Logout)
+	// Public authentication endpoints.
+	auth.Post(
+		"/login",
+		authHandler.Login,
+	)
 
-	auth.Get(
-		"/me",
+	auth.Post(
+		"/refresh",
+		authHandler.Refresh,
+	)
+
+	auth.Post(
+		"/logout",
+		authHandler.Logout,
+	)
+
+	auth.Post(
+		"/forgot-password",
+		authHandler.ForgotPassword,
+	)
+
+	auth.Post(
+		"/reset-password",
+		authHandler.ResetPassword,
+	)
+
+	// Authenticated endpoints.
+	protected := auth.Group(
+		"",
 		authMiddleware.Protect(),
+	)
+
+	protected.Get(
+		"/me",
 		authHandler.Me,
+	)
+
+	protected.Post(
+		"/change-password",
+		authHandler.ChangePassword,
 	)
 }

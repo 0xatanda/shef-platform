@@ -22,7 +22,7 @@ func RegisterPartnerRoutes(
 		cfg.JWTSecret,
 	)
 
-	authMiddleware := middleware.NewAuthMiddleware(
+	authMiddleware := newAuthMiddleware(
 		jwtService,
 	)
 

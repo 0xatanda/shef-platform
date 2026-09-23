@@ -6,18 +6,18 @@ import (
 	"github.com/google/uuid"
 )
 
-type RefreshToken struct {
+type PasswordResetToken struct {
 	ID uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 
 	UserID uuid.UUID `gorm:"type:uuid;not null;index"`
 
-	SessionID uuid.UUID `gorm:"type:uuid;not null;index"`
-
-	Token string `gorm:"type:text;not null;uniqueIndex"`
+	TokenHash string `gorm:"type:text;uniqueIndex;not null"`
 
 	ExpiresAt time.Time `gorm:"not null;index"`
 
-	Revoked bool `gorm:"default:false;index"`
+	UsedAt *time.Time `gorm:"index"`
 
 	CreatedAt time.Time
+
+	UpdatedAt time.Time
 }

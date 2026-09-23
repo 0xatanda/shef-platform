@@ -19,7 +19,9 @@ func RegisterMediaRoutes(api fiber.Router) {
 
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 
-	authMiddleware := middleware.NewAuthMiddleware(jwtService)
+	authMiddleware := newAuthMiddleware(
+		jwtService,
+	)
 
 	mediaRepo := repositories.NewMediaRepository(database.DB)
 

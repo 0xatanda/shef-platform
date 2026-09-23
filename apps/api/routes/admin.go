@@ -19,7 +19,9 @@ func RegisterAdminRoutes(api fiber.Router) {
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 
 	// Middleware
-	authMiddleware := middleware.NewAuthMiddleware(jwtService)
+	authMiddleware := newAuthMiddleware(
+		jwtService,
+	)
 
 	// Handler
 	userRepo := repositories.NewUserRepository(database.DB)

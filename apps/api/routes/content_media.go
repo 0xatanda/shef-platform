@@ -29,7 +29,9 @@ func RegisterContentMediaRoutes(api fiber.Router) {
 	// ADMIN MEDIA
 	// Authentication and role protection required.
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
-	authMiddleware := middleware.NewAuthMiddleware(jwtService)
+	authMiddleware := newAuthMiddleware(
+		jwtService,
+	)
 
 	admin := api.Group(
 		"/admin/media",

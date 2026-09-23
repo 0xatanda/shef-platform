@@ -14,6 +14,7 @@ func TestGenerateAccessToken(t *testing.T) {
 
 	token, err := jwt.GenerateAccessToken(
 		"123",
+		"session-123",
 		"admin@shef.org",
 		"admin",
 	)
@@ -33,6 +34,7 @@ func TestValidateToken(t *testing.T) {
 
 	token, _ := jwt.GenerateAccessToken(
 		"123",
+		"session-123",
 		"admin@shef.org",
 		"admin",
 	)
@@ -54,6 +56,13 @@ func TestValidateToken(t *testing.T) {
 	if claims.Role != "admin" {
 		t.Fatalf("expected role admin")
 	}
+
+	if claims.SessionID != "session-123" {
+		t.Fatalf(
+			"expected session id session-123, got %s",
+			claims.SessionID,
+		)
+	}
 }
 
 func TestInvalidSecret(t *testing.T) {
@@ -64,6 +73,7 @@ func TestInvalidSecret(t *testing.T) {
 
 	token, _ := jwt1.GenerateAccessToken(
 		"1",
+		"session-123",
 		"a@a.com",
 		"admin",
 	)
@@ -92,6 +102,7 @@ func TestEmptySecret(t *testing.T) {
 
 	token, err := jwt.GenerateAccessToken(
 		"1",
+		"session-123",
 		"a@a.com",
 		"admin",
 	)
@@ -110,6 +121,7 @@ func TestEmptyClaims(t *testing.T) {
 	jwt := newJWT()
 
 	token, err := jwt.GenerateAccessToken(
+		"",
 		"",
 		"",
 		"",

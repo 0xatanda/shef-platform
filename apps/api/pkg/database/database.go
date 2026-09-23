@@ -12,7 +12,6 @@ import (
 var DB *gorm.DB
 
 func Connect(cfg *configs.Config) error {
-	fmt.Printf("%+v\n", *cfg)
 
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
@@ -24,13 +23,14 @@ func Connect(cfg *configs.Config) error {
 		cfg.DBSSLMode,
 	)
 
-	fmt.Println(dsn)
-
-	fmt.Println("DSN:", dsn)
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
+	db, err := gorm.Open(
+		postgres.Open(dsn),
+		&gorm.Config{
+			Logger: logger.Default.LogMode(
+				logger.Silent,
+			),
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -45,5 +45,6 @@ func Connect(cfg *configs.Config) error {
 	}
 
 	DB = db
+
 	return nil
 }

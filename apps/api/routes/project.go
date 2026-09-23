@@ -20,7 +20,7 @@ func RegisterProjectRoutes(api fiber.Router) {
 		cfg.JWTSecret,
 	)
 
-	authMiddleware := middleware.NewAuthMiddleware(
+	authMiddleware := newAuthMiddleware(
 		jwtService,
 	)
 

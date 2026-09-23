@@ -21,7 +21,7 @@ func RegisterAdminContactRoutes(v1 fiber.Router) {
 		cfg.JWTSecret,
 	)
 
-	authMiddleware := middleware.NewAuthMiddleware(
+	authMiddleware := newAuthMiddleware(
 		jwtService,
 	)
 
