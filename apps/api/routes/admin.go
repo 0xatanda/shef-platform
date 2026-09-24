@@ -12,23 +12,36 @@ import (
 	"github.com/0xatanda/shef-platform/pkg/database"
 )
 
-func RegisterAdminRoutes(api fiber.Router) {
+func RegisterAdminRoutes(
+	api fiber.Router,
+) {
+
 	cfg := configs.Load()
 
-	// JWT Service
-	jwtService := auth.NewJWTService(cfg.JWTSecret)
+	jwtService := auth.NewJWTService(
+		cfg.JWTSecret,
+	)
 
-	// Middleware
 	authMiddleware := newAuthMiddleware(
 		jwtService,
 	)
 
-	// Handler
-	userRepo := repositories.NewUserRepository(database.DB)
+	userRepo := repositories.NewUserRepository(
+		database.DB,
+	)
 
-	adminService := services.NewAdminService(userRepo)
+	sessionRepo := repositories.NewUserSessionRepository(
+		database.DB,
+	)
 
-	adminHandler := handlers.NewAdminHandler(adminService)
+	adminService := services.NewAdminService(
+		userRepo,
+		sessionRepo,
+	)
+
+	adminHandler := handlers.NewAdminHandler(
+		adminService,
+	)
 
 	admin := api.Group(
 		"/admin",
@@ -36,12 +49,38 @@ func RegisterAdminRoutes(api fiber.Router) {
 		middleware.RequireRoles("super_admin"),
 	)
 
-	admin.Get("/dashboard", adminHandler.Dashboard)
-	admin.Get("/users", adminHandler.ListUsers)
-	admin.Get("/users/:id", adminHandler.GetUser)
-	admin.Post("/users", adminHandler.CreateUser)
-	admin.Put("/users/:id", adminHandler.UpdateUser)
-	admin.Patch("/users/:id/status", adminHandler.ChangeStatus)
-	admin.Patch("/users/:id/status", adminHandler.ChangeStatus)
-	admin.Delete("/users/:id", adminHandler.DeleteUser)
+	admin.Get(
+		"/dashboard",
+		adminHandler.Dashboard,
+	)
+
+	admin.Get(
+		"/users",
+		adminHandler.ListUsers,
+	)
+
+	admin.Get(
+		"/users/:id",
+		adminHandler.GetUser,
+	)
+
+	admin.Post(
+		"/users",
+		adminHandler.CreateUser,
+	)
+
+	admin.Put(
+		"/users/:id",
+		adminHandler.UpdateUser,
+	)
+
+	admin.Patch(
+		"/users/:id/status",
+		adminHandler.ChangeStatus,
+	)
+
+	admin.Delete(
+		"/users/:id",
+		adminHandler.DeleteUser,
+	)
 }

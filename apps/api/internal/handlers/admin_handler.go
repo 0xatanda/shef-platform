@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strings"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -26,7 +28,9 @@ func NewAdminHandler(
 	}
 }
 
-func (h *AdminHandler) Dashboard(c *fiber.Ctx) error {
+func (h *AdminHandler) Dashboard(
+	c *fiber.Ctx,
+) error {
 
 	return response.Success(
 		c,
@@ -39,10 +43,20 @@ func (h *AdminHandler) Dashboard(c *fiber.Ctx) error {
 	)
 }
 
-func (h *AdminHandler) ListUsers(c *fiber.Ctx) error {
+// ListUsers lists employee/admin accounts.
+func (h *AdminHandler) ListUsers(
+	c *fiber.Ctx,
+) error {
 
-	page := c.QueryInt("page", 1)
-	limit := c.QueryInt("limit", 10)
+	page := c.QueryInt(
+		"page",
+		1,
+	)
+
+	limit := c.QueryInt(
+		"limit",
+		10,
+	)
 
 	if page < 1 {
 		page = 1
@@ -56,12 +70,11 @@ func (h *AdminHandler) ListUsers(c *fiber.Ctx) error {
 		limit = 100
 	}
 
-	res, err := h.service.ListUsers(
+	result, err := h.service.ListUsers(
 		c.UserContext(),
 		page,
 		limit,
 	)
-
 	if err != nil {
 		return response.Error(
 			c,
@@ -74,13 +87,18 @@ func (h *AdminHandler) ListUsers(c *fiber.Ctx) error {
 	return response.Success(
 		c,
 		"Users retrieved successfully",
-		res,
+		result,
 	)
 }
 
-func (h *AdminHandler) GetUser(c *fiber.Ctx) error {
+// GetUser returns one employee/admin account.
+func (h *AdminHandler) GetUser(
+	c *fiber.Ctx,
+) error {
 
-	id, err := uuid.Parse(c.Params("id"))
+	id, err := uuid.Parse(
+		c.Params("id"),
+	)
 	if err != nil {
 		return response.Error(
 			c,
@@ -94,7 +112,6 @@ func (h *AdminHandler) GetUser(c *fiber.Ctx) error {
 		c.UserContext(),
 		id,
 	)
-
 	if err != nil {
 		return response.Error(
 			c,
@@ -111,7 +128,10 @@ func (h *AdminHandler) GetUser(c *fiber.Ctx) error {
 	)
 }
 
-func (h *AdminHandler) CreateUser(c *fiber.Ctx) error {
+// CreateUser creates an employee/admin account.
+func (h *AdminHandler) CreateUser(
+	c *fiber.Ctx,
+) error {
 
 	var req dto.CreateUserRequest
 
@@ -124,16 +144,46 @@ func (h *AdminHandler) CreateUser(c *fiber.Ctx) error {
 		)
 	}
 
+	req.FirstName = strings.TrimSpace(
+		req.FirstName,
+	)
+
+	req.LastName = strings.TrimSpace(
+		req.LastName,
+	)
+
+	req.Email = strings.ToLower(
+		strings.TrimSpace(req.Email),
+	)
+
+	req.Role = strings.ToLower(
+		strings.TrimSpace(req.Role),
+	)
+
+	if err := h.validate.Struct(req); err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Invalid employee information",
+			err.Error(),
+		)
+	}
+
 	user, err := h.service.CreateUser(
 		c.UserContext(),
 		req,
 	)
-
 	if err != nil {
+
+		status := fiber.StatusBadRequest
+
+		if err == services.ErrUserAlreadyExists {
+			status = fiber.StatusConflict
+		}
 
 		return response.Error(
 			c,
-			fiber.StatusBadRequest,
+			status,
 			err.Error(),
 			nil,
 		)
@@ -141,14 +191,19 @@ func (h *AdminHandler) CreateUser(c *fiber.Ctx) error {
 
 	return response.Success(
 		c,
-		"User created successfully",
+		"Employee account created successfully",
 		user,
 	)
 }
 
-func (h *AdminHandler) UpdateUser(c *fiber.Ctx) error {
+// UpdateUser updates an employee/admin account.
+func (h *AdminHandler) UpdateUser(
+	c *fiber.Ctx,
+) error {
 
-	id, err := uuid.Parse(c.Params("id"))
+	id, err := uuid.Parse(
+		c.Params("id"),
+	)
 	if err != nil {
 		return response.Error(
 			c,
@@ -169,68 +224,181 @@ func (h *AdminHandler) UpdateUser(c *fiber.Ctx) error {
 		)
 	}
 
+	req.FirstName = strings.TrimSpace(
+		req.FirstName,
+	)
+
+	req.LastName = strings.TrimSpace(
+		req.LastName,
+	)
+
+	req.Role = strings.ToLower(
+		strings.TrimSpace(req.Role),
+	)
+
+	if err := h.validate.Struct(req); err != nil {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			"Invalid employee information",
+			err.Error(),
+		)
+	}
+
 	user, err := h.service.UpdateUser(
 		c.UserContext(),
 		id,
 		req,
 	)
 	if err != nil {
+		if err == services.ErrInvalidRole {
+			return response.Error(
+				c,
+				fiber.StatusBadRequest,
+				err.Error(),
+				nil,
+			)
+		}
+
 		return response.Error(
 			c,
 			fiber.StatusInternalServerError,
-			err.Error(),
+			"Failed to update employee",
 			nil,
 		)
 	}
 
 	return response.Success(
 		c,
-		"User updated successfully",
+		"Employee updated successfully",
 		user,
 	)
 }
 
-func (h *AdminHandler) ChangeStatus(c *fiber.Ctx) error {
+// ChangeStatus activates/deactivates an employee.
+func (h *AdminHandler) ChangeStatus(
+	c *fiber.Ctx,
+) error {
 
-	id, err := uuid.Parse(c.Params("id"))
+	id, err := uuid.Parse(
+		c.Params("id"),
+	)
 	if err != nil {
-		return response.BadRequest(c, "Invalid user ID")
+		return response.BadRequest(
+			c,
+			"Invalid user ID",
+		)
 	}
 
 	var req dto.ChangeUserStatusRequest
 
 	if err := c.BodyParser(&req); err != nil {
-		return response.BadRequest(c, "Invalid request body")
+		return response.BadRequest(
+			c,
+			"Invalid request body",
+		)
+	}
+
+	actorIDString, ok := c.Locals(
+		"user_id",
+	).(string)
+
+	if !ok {
+		return response.Error(
+			c,
+			fiber.StatusUnauthorized,
+			"Invalid authenticated user",
+			nil,
+		)
+	}
+
+	actorID, err := uuid.Parse(
+		actorIDString,
+	)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusUnauthorized,
+			"Invalid authenticated user",
+			nil,
+		)
 	}
 
 	user, err := h.service.ChangeStatus(
-		c.Context(),
+		c.UserContext(),
+		actorID,
 		id,
 		req.IsActive,
 	)
 	if err != nil {
-		return response.BadRequest(c, err.Error())
+
+		if err == services.ErrCannotDeactivateSelf {
+			return response.Error(
+				c,
+				fiber.StatusForbidden,
+				err.Error(),
+				nil,
+			)
+		}
+
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			err.Error(),
+			nil,
+		)
+	}
+
+	message := "Employee deactivated successfully"
+
+	if req.IsActive {
+		message = "Employee activated successfully"
 	}
 
 	return response.Success(
 		c,
-		"User status updated successfully",
+		message,
 		user,
 	)
 }
 
-func (h *AdminHandler) DeleteUser(c *fiber.Ctx) error {
+// DeleteUser soft-deletes an employee/admin account.
+func (h *AdminHandler) DeleteUser(
+	c *fiber.Ctx,
+) error {
 
-	id, err := uuid.Parse(c.Params("id"))
-	if err != nil {
-		return response.BadRequest(c, "Invalid user ID")
-	}
-
-	err = h.service.DeleteUser(
-		c.Context(),
-		id,
+	id, err := uuid.Parse(
+		c.Params("id"),
 	)
 	if err != nil {
+		return response.BadRequest(
+			c,
+			"Invalid user ID",
+		)
+	}
+
+	actorIDString, _ := c.Locals(
+		"user_id",
+	).(string)
+
+	actorID, _ := uuid.Parse(
+		actorIDString,
+	)
+
+	// Prevent Super Admin from deleting themselves.
+	if actorID == id {
+		return response.Error(
+			c,
+			fiber.StatusForbidden,
+			"You cannot delete your own account",
+			nil,
+		)
+	}
+
+	if err := h.service.DeleteUser(
+		c.UserContext(),
+		id,
+	); err != nil {
 		return response.Error(
 			c,
 			fiber.StatusBadRequest,
@@ -241,7 +409,7 @@ func (h *AdminHandler) DeleteUser(c *fiber.Ctx) error {
 
 	return response.Success(
 		c,
-		"User deleted successfully",
+		"Employee deleted successfully",
 		nil,
 	)
 }

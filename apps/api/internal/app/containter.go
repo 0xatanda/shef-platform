@@ -75,6 +75,7 @@ func NewContainer() *Container {
 	adminService :=
 		services.NewAdminService(
 			userRepo,
+			sessionRepo,
 		)
 
 	// ============================================================

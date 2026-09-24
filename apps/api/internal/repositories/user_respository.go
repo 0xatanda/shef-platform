@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/0xatanda/shef-platform/internal/models"
@@ -20,81 +21,133 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	}
 }
 
-// Create a new user
-func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
-	return r.db.WithContext(ctx).Create(user).Error
+// Create a new user.
+func (r *UserRepository) Create(
+	ctx context.Context,
+	user *models.User,
+) error {
+	return r.db.WithContext(ctx).
+		Create(user).
+		Error
 }
 
-// Find user by ID
-func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
-	var user models.User
+// Find user by ID.
+func (r *UserRepository) FindByID(
+	ctx context.Context,
+	id uuid.UUID,
+) (*models.User, error) {
 
-	err := r.db.WithContext(ctx).First(&user, "id = ?", id).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, err
-	}
-
-	return &user, nil
-}
-
-// Find user by email
-func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
 
 	err := r.db.WithContext(ctx).
-		Where("email = ?", email).
-		First(&user).Error
+		First(&user, "id = ?", id).
+		Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
 		}
+
 		return nil, err
 	}
 
 	return &user, nil
 }
 
-// Update user
-func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
-	return r.db.WithContext(ctx).Save(user).Error
+// Find user by email.
+func (r *UserRepository) FindByEmail(
+	ctx context.Context,
+	email string,
+) (*models.User, error) {
+
+	var user models.User
+
+	email = strings.TrimSpace(
+		strings.ToLower(email),
+	)
+
+	err := r.db.WithContext(ctx).
+		Where("email = ?", email).
+		First(&user).
+		Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+
+		return nil, err
+	}
+
+	return &user, nil
 }
 
-// Delete user (soft delete)
-func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&models.User{}, "id = ?", id).Error
+// Update user.
+func (r *UserRepository) Update(
+	ctx context.Context,
+	user *models.User,
+) error {
+	return r.db.WithContext(ctx).
+		Save(user).
+		Error
 }
 
-// Update last login
-func (r *UserRepository) UpdateLastLogin(ctx context.Context, id uuid.UUID) error {
+// Soft delete user.
+func (r *UserRepository) Delete(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
+	return r.db.WithContext(ctx).
+		Delete(&models.User{}, "id = ?", id).
+		Error
+}
+
+// Update last login.
+func (r *UserRepository) UpdateLastLogin(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
+
 	now := time.Now()
 
-	return r.db.WithContext(ctx).Model(&models.User{}).
+	return r.db.WithContext(ctx).
+		Model(&models.User{}).
 		Where("id = ?", id).
-		Update("last_login", now).Error
+		Update("last_login", now).
+		Error
 }
 
-// Verify email
-func (r *UserRepository) VerifyEmail(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Model(&models.User{}).
+// Verify email.
+func (r *UserRepository) VerifyEmail(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
+
+	return r.db.WithContext(ctx).
+		Model(&models.User{}).
 		Where("id = ?", id).
-		Update("email_verified", true).Error
+		Update("email_verified", true).
+		Error
 }
 
-// Update password
-func (r *UserRepository) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
-	return r.db.WithContext(ctx).Model(&models.User{}).
+// Update password.
+func (r *UserRepository) UpdatePassword(
+	ctx context.Context,
+	id uuid.UUID,
+	passwordHash string,
+) error {
+
+	return r.db.WithContext(ctx).
+		Model(&models.User{}).
 		Where("id = ?", id).
-		Update("password_hash", passwordHash).Error
+		Update("password_hash", passwordHash).
+		Error
 }
 
-// List users with pagination
+// List users with pagination.
 func (r *UserRepository) List(
 	ctx context.Context,
-	page,
+	page int,
 	limit int,
 ) ([]models.User, int64, error) {
 
@@ -107,7 +160,8 @@ func (r *UserRepository) List(
 
 	if err := r.db.WithContext(ctx).
 		Model(&models.User{}).
-		Count(&total).Error; err != nil {
+		Count(&total).
+		Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -115,18 +169,21 @@ func (r *UserRepository) List(
 		Limit(limit).
 		Offset(offset).
 		Order("created_at DESC").
-		Find(&users).Error; err != nil {
+		Find(&users).
+		Error; err != nil {
 		return nil, 0, err
 	}
 
 	return users, total, nil
 }
 
+// Change user active status.
 func (r *UserRepository) ChangeStatus(
 	ctx context.Context,
 	id uuid.UUID,
 	active bool,
 ) error {
+
 	return r.db.WithContext(ctx).
 		Model(&models.User{}).
 		Where("id = ?", id).
@@ -134,6 +191,7 @@ func (r *UserRepository) ChangeStatus(
 		Error
 }
 
+// Check whether an email already exists.
 func (r *UserRepository) ExistsByEmail(
 	ctx context.Context,
 	email string,
@@ -141,10 +199,15 @@ func (r *UserRepository) ExistsByEmail(
 
 	var count int64
 
+	email = strings.TrimSpace(
+		strings.ToLower(email),
+	)
+
 	err := r.db.WithContext(ctx).
 		Model(&models.User{}).
 		Where("email = ?", email).
-		Count(&count).Error
+		Count(&count).
+		Error
 
 	if err != nil {
 		return false, err

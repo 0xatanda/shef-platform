@@ -27,7 +27,10 @@ func (m *mockUserRepository) List(
 	return m.users, m.total, m.err
 }
 
-func (m *mockUserRepository) FindByEmail(context.Context, string) (*models.User, error) {
+func (m *mockUserRepository) FindByEmail(
+	ctx context.Context,
+	email string,
+) (*models.User, error) {
 	return nil, nil
 }
 
@@ -42,27 +45,84 @@ func (m *mockUserRepository) FindByID(
 	return m.user, nil
 }
 
-func (m *mockUserRepository) UpdateLastLogin(context.Context, uuid.UUID) error {
+func (m *mockUserRepository) UpdateLastLogin(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
 	return nil
 }
 
-func (m *mockUserRepository) Create(context.Context, *models.User) error {
+func (m *mockUserRepository) Create(
+	ctx context.Context,
+	user *models.User,
+) error {
 	return nil
 }
 
-func (m *mockUserRepository) Update(context.Context, *models.User) error {
+func (m *mockUserRepository) Update(
+	ctx context.Context,
+	user *models.User,
+) error {
 	return nil
 }
 
-func (m *mockUserRepository) Delete(context.Context, uuid.UUID) error {
+func (m *mockUserRepository) Delete(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
 	return nil
 }
 
-func (m *mockUserRepository) ChangeStatus(context.Context, uuid.UUID, bool) error {
+func (m *mockUserRepository) ChangeStatus(
+	ctx context.Context,
+	id uuid.UUID,
+	active bool,
+) error {
 	return nil
 }
+
+func (m *mockUserRepository) ExistsByEmail(
+	ctx context.Context,
+	email string,
+) (bool, error) {
+	return m.exists, m.err
+}
+
+// ------------------------------------------------------------
+// Mock User Session Repository
+// ------------------------------------------------------------
+
+type mockUserSessionRepository struct {
+	revokeErr error
+}
+
+func (m *mockUserSessionRepository) RevokeByUserID(
+	ctx context.Context,
+	userID uuid.UUID,
+) error {
+	return m.revokeErr
+}
+
+// ------------------------------------------------------------
+// Test Service Helper
+// ------------------------------------------------------------
+
+func newTestAdminService(
+	repo *mockUserRepository,
+) *AdminService {
+	sessionRepo := &mockUserSessionRepository{}
+
+	return NewAdminService(
+		repo,
+		sessionRepo,
+	)
+}
+
+// ------------------------------------------------------------
+// Tests
+// ------------------------------------------------------------
+
 func TestListUsers(t *testing.T) {
-
 	repo := &mockUserRepository{
 		users: []models.User{
 			{
@@ -78,7 +138,7 @@ func TestListUsers(t *testing.T) {
 		total: 1,
 	}
 
-	service := NewAdminService(repo)
+	service := newTestAdminService(repo)
 
 	res, err := service.ListUsers(
 		context.Background(),
@@ -96,13 +156,12 @@ func TestListUsers(t *testing.T) {
 }
 
 func TestListUsersEmpty(t *testing.T) {
-
 	repo := &mockUserRepository{
 		users: []models.User{},
 		total: 0,
 	}
 
-	service := NewAdminService(repo)
+	service := newTestAdminService(repo)
 
 	res, err := service.ListUsers(
 		context.Background(),
@@ -116,12 +175,11 @@ func TestListUsersEmpty(t *testing.T) {
 }
 
 func TestListUsersRepositoryError(t *testing.T) {
-
 	repo := &mockUserRepository{
 		err: assert.AnError,
 	}
 
-	service := NewAdminService(repo)
+	service := newTestAdminService(repo)
 
 	res, err := service.ListUsers(
 		context.Background(),
@@ -132,8 +190,8 @@ func TestListUsersRepositoryError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, res)
 }
-func TestGetUser(t *testing.T) {
 
+func TestGetUser(t *testing.T) {
 	id := uuid.New()
 
 	repo := &mockUserRepository{
@@ -146,7 +204,7 @@ func TestGetUser(t *testing.T) {
 		},
 	}
 
-	service := NewAdminService(repo)
+	service := newTestAdminService(repo)
 
 	user, err := service.GetUser(
 		context.Background(),
@@ -160,12 +218,11 @@ func TestGetUser(t *testing.T) {
 }
 
 func TestGetUserNotFound(t *testing.T) {
-
 	repo := &mockUserRepository{
 		err: gorm.ErrRecordNotFound,
 	}
 
-	service := NewAdminService(repo)
+	service := newTestAdminService(repo)
 
 	user, err := service.GetUser(
 		context.Background(),
@@ -174,11 +231,4 @@ func TestGetUserNotFound(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, user)
-}
-
-func (m *mockUserRepository) ExistsByEmail(
-	ctx context.Context,
-	email string,
-) (bool, error) {
-	return m.exists, m.err
 }
