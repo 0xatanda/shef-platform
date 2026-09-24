@@ -39,6 +39,21 @@ func RegisterAdminRoutes(
 		sessionRepo,
 	)
 
+	focusAreaRepo :=
+		repositories.NewFocusAreaRepository(
+			database.DB,
+		)
+
+	focusAreaService :=
+		services.NewFocusAreaService(
+			focusAreaRepo,
+		)
+
+	focusAreaHandler :=
+		handlers.NewFocusAreaHandler(
+			focusAreaService,
+		)
+
 	adminHandler := handlers.NewAdminHandler(
 		adminService,
 	)
@@ -82,5 +97,35 @@ func RegisterAdminRoutes(
 	admin.Delete(
 		"/users/:id",
 		adminHandler.DeleteUser,
+	)
+
+	admin.Get(
+		"/focus-areas",
+		focusAreaHandler.List,
+	)
+
+	admin.Get(
+		"/focus-areas/:id",
+		focusAreaHandler.Get,
+	)
+
+	admin.Post(
+		"/focus-areas",
+		focusAreaHandler.Create,
+	)
+
+	admin.Put(
+		"/focus-areas/:id",
+		focusAreaHandler.Update,
+	)
+
+	admin.Delete(
+		"/focus-areas/:id",
+		focusAreaHandler.Delete,
+	)
+
+	api.Get(
+		"/focus-areas/:slug",
+		focusAreaHandler.GetBySlug,
 	)
 }

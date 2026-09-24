@@ -393,3 +393,35 @@ type PublicationRepository interface {
 		blocks []models.PublicationBlock,
 	) error
 }
+
+type FocusAreaRepository interface {
+	List(
+		ctx context.Context,
+		includeInactive bool,
+	) ([]models.FocusArea, error)
+
+	FindByID(
+		ctx context.Context,
+		id uuid.UUID,
+	) (*models.FocusArea, error)
+
+	FindBySlug(
+		ctx context.Context,
+		slug string,
+	) (*models.FocusArea, error)
+
+	Create(
+		ctx context.Context,
+		focusArea *models.FocusArea,
+	) error
+
+	Update(
+		ctx context.Context,
+		focusArea *models.FocusArea,
+	) error
+
+	Delete(
+		ctx context.Context,
+		id uuid.UUID,
+	) error
+}
