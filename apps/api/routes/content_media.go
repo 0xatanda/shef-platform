@@ -36,10 +36,7 @@ func RegisterContentMediaRoutes(api fiber.Router) {
 	admin := api.Group(
 		"/admin/media",
 		authMiddleware.Protect(),
-		middleware.RequireRoles(
-			"admin",
-			"super_admin",
-		),
+		middleware.RequireAdminAccess(),
 	)
 
 	admin.Post("/", mediaHandler.Create)

@@ -15,7 +15,6 @@ import (
 func RegisterAdminRoutes(
 	api fiber.Router,
 ) {
-
 	cfg := configs.Load()
 
 	jwtService := auth.NewJWTService(
@@ -58,72 +57,121 @@ func RegisterAdminRoutes(
 		adminService,
 	)
 
+	/*
+		General admin area.
+
+		All authenticated administration users can
+		access the admin platform.
+
+		Employee/user management is restricted
+		separately to Super Admin below.
+	*/
 	admin := api.Group(
 		"/admin",
 		authMiddleware.Protect(),
-		middleware.RequireRoles("super_admin"),
+		middleware.RequireAdminAccess(),
 	)
 
+	/*
+		Dashboard
+
+		Available to all administration users.
+	*/
 	admin.Get(
 		"/dashboard",
 		adminHandler.Dashboard,
 	)
 
-	admin.Get(
+	/*
+		Employee / User Management
+
+		Super Admin only.
+
+		Only Super Admin can:
+		- list employees
+		- view employee details
+		- create employees
+		- update employees
+		- activate/deactivate employees
+		- delete employees
+	*/
+	userAdmin := admin.Group(
 		"/users",
+		middleware.RequireSuperAdminAccess(),
+	)
+
+	userAdmin.Get(
+		"/",
 		adminHandler.ListUsers,
 	)
 
-	admin.Get(
-		"/users/:id",
+	userAdmin.Get(
+		"/:id",
 		adminHandler.GetUser,
 	)
 
-	admin.Post(
-		"/users",
+	userAdmin.Post(
+		"/",
 		adminHandler.CreateUser,
 	)
 
-	admin.Put(
-		"/users/:id",
+	userAdmin.Put(
+		"/:id",
 		adminHandler.UpdateUser,
 	)
 
-	admin.Patch(
-		"/users/:id/status",
+	userAdmin.Patch(
+		"/:id/status",
 		adminHandler.ChangeStatus,
 	)
 
-	admin.Delete(
-		"/users/:id",
+	userAdmin.Delete(
+		"/:id",
 		adminHandler.DeleteUser,
 	)
 
-	admin.Get(
+	/*
+		Focus Areas
+
+		All administration users can manage
+		content in the CMS.
+	*/
+	focusAreaAdmin := admin.Group(
 		"/focus-areas",
+		middleware.RequireAdminAccess(),
+	)
+
+	focusAreaAdmin.Get(
+		"/",
 		focusAreaHandler.List,
 	)
 
-	admin.Get(
-		"/focus-areas/:id",
+	focusAreaAdmin.Get(
+		"/:id",
 		focusAreaHandler.Get,
 	)
 
-	admin.Post(
-		"/focus-areas",
+	focusAreaAdmin.Post(
+		"/",
 		focusAreaHandler.Create,
 	)
 
-	admin.Put(
-		"/focus-areas/:id",
+	focusAreaAdmin.Put(
+		"/:id",
 		focusAreaHandler.Update,
 	)
 
-	admin.Delete(
-		"/focus-areas/:id",
+	focusAreaAdmin.Delete(
+		"/:id",
 		focusAreaHandler.Delete,
 	)
 
+	/*
+		Public Focus Area endpoint.
+
+		This remains outside the authenticated
+		admin group.
+	*/
 	api.Get(
 		"/focus-areas/:slug",
 		focusAreaHandler.GetBySlug,

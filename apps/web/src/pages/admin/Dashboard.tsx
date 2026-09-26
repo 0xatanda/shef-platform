@@ -24,6 +24,10 @@ export default function Dashboard() {
       title: "Donations",
       href: "/admin/donations",
     },
+    {
+      title: "Employees",
+      href: "/admin/employees",
+    },
   ];
 
   return (
@@ -33,23 +37,24 @@ export default function Dashboard() {
           Dashboard
         </h2>
 
-        <p className="text-gray-500 mt-2">
-          Manage the SHEF website.
+        <p className="mt-2 text-gray-500">
+          Manage the SHEF website and
+          administration platform.
         </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid gap-6 md:grid-cols-3">
         {cards.map((card) => (
           <a
             key={card.href}
             href={card.href}
-            className="bg-white border border-gray-200 rounded-xl p-6 hover:border-green-500 hover:shadow-sm transition"
+            className="rounded-xl border border-gray-200 bg-white p-6 transition hover:border-green-500 hover:shadow-sm"
           >
-            <h3 className="font-semibold text-lg">
+            <h3 className="text-lg font-semibold">
               {card.title}
             </h3>
 
-            <p className="text-green-700 mt-3">
+            <p className="mt-3 text-green-700">
               Manage →
             </p>
           </a>

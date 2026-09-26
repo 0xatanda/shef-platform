@@ -81,11 +81,7 @@ export default function Publications() {
     <div>
       <section className="bg-green-50 py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <p className="font-semibold uppercase tracking-wider text-green-700">
-            Resources
-          </p>
-
-          <h1 className="mt-3 text-4xl font-bold text-slate-900 md:text-5xl">
+          <h1 className="mt-3 text-4xl font-bold text-green-600 md:text-2xl">
             Publications
           </h1>
 
@@ -216,7 +212,7 @@ export default function Publications() {
                             rel="noopener noreferrer"
                             className="mt-5 inline-flex font-semibold text-green-700 hover:text-green-800"
                           >
-                            Read original publication →
+                            Read publication →
                           </a>
                         ) : (
                           <Link

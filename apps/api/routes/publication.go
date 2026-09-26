@@ -6,7 +6,6 @@ import (
 	"github.com/0xatanda/shef-platform/configs"
 	"github.com/0xatanda/shef-platform/internal/handlers"
 	"github.com/0xatanda/shef-platform/internal/middleware"
-	"github.com/0xatanda/shef-platform/internal/models"
 	"github.com/0xatanda/shef-platform/internal/repositories"
 	"github.com/0xatanda/shef-platform/internal/services"
 	"github.com/0xatanda/shef-platform/pkg/auth"
@@ -36,7 +35,10 @@ func RegisterPublicationRoutes(api fiber.Router) {
 	api.Get("/publications/:id", publicationHandler.GetPublication)
 	api.Get("/publications/:id", publicationHandler.GetPublishedPublication)
 
-	admin := api.Group("/admin/publications", authMiddleware.Protect(), middleware.RequireRoles(string(models.RoleAdmin), string(models.RoleSuperAdmin)))
+	admin := api.Group(
+		"/admin/publications",
+		authMiddleware.Protect(),
+		middleware.RequireAdminAccess())
 	admin.Post("/", publicationHandler.CreatePublication)
 	admin.Get("/", publicationHandler.ListPublications)
 	admin.Get("/deleted", publicationHandler.ListDeletedPublications)

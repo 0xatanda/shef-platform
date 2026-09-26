@@ -4,7 +4,6 @@ import (
 	"github.com/0xatanda/shef-platform/configs"
 	"github.com/0xatanda/shef-platform/internal/handlers"
 	"github.com/0xatanda/shef-platform/internal/middleware"
-	"github.com/0xatanda/shef-platform/internal/models"
 	"github.com/0xatanda/shef-platform/internal/repositories"
 	"github.com/0xatanda/shef-platform/internal/services"
 	"github.com/0xatanda/shef-platform/pkg/auth"
@@ -42,7 +41,14 @@ func RegisterPartnerRoutes(
 	v1.Get("/partners", partnerHandler.ListPublicPartners)
 
 	// Admin
-	admin := v1.Group("/admin/partners", authMiddleware.Protect(), middleware.RequireRoles(string(models.RoleAdmin), string(models.RoleSuperAdmin)))
+	admin := v1.Group(
+		"/admin/partners",
+		// middleware.RequireRoles(string(models.RoleAdmin),
+		// string(models.RoleSuperAdmin)),
+
+		authMiddleware.Protect(),
+		middleware.RequireAdminAccess(),
+	)
 	admin.Post("/", partnerHandler.CreatePartner)
 	admin.Get("/", partnerHandler.ListPartners)
 	admin.Get("/:id", partnerHandler.GetPartner)

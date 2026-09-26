@@ -42,13 +42,18 @@ const defaultContent: Record<string, string> = {
     "Our mission is to empower informal settlement communities by strengthening their capacity to organize, generate data, influence policy, and drive inclusive urban development. We are committed to supporting community leadership, promoting equity, and enabling sustainable improvements in quality of life.",
 };
 
-const contentKeys = Object.keys(defaultContent);
+const contentKeys = Object.keys(
+  defaultContent,
+);
 
-async function getContent(key: string): Promise<string> {
+async function getContent(
+  key: string,
+): Promise<string> {
   try {
-    const response = await api.get<ContentResponse>(
-      `/content/${encodeURIComponent(key)}`,
-    );
+    const response =
+      await api.get<ContentResponse>(
+        `/content/${encodeURIComponent(key)}`,
+      );
 
     return (
       response.data.data.content ||
@@ -65,7 +70,9 @@ async function getContent(key: string): Promise<string> {
   }
 }
 
-function getFocalAreas(content: Record<string, string>): string[] {
+function getFocalAreas(
+  content: Record<string, string>,
+): string[] {
   const items =
     content["about.focal_areas.items"] ||
     "";
@@ -130,7 +137,8 @@ export default function About() {
     };
   }, []);
 
-  const focalAreas = getFocalAreas(content);
+  const focalAreas =
+    getFocalAreas(content);
 
   return (
     <section className="bg-white">
@@ -140,7 +148,9 @@ export default function About() {
           <img
             src="/hero/about-hero.jpg"
             alt={
-              content["about.hero.description"] ||
+              content[
+                "about.hero.description"
+              ] ||
               "Community empowerment and organizing"
             }
             className="h-105 w-full object-cover"
@@ -152,20 +162,22 @@ export default function About() {
               <h1 className="text-4xl font-bold sm:text-5xl">
                 {loading
                   ? defaultContent[
-                      ""
+                      "about.hero.title"
                     ]
                   : content[
-                      ""
+                      "about.hero.title"
                     ]}
               </h1>
 
               {content[
-                ""
+                "about.hero.description"
               ] && (
                 <p className="mx-auto mt-3 max-w-2xl text-base sm:text-lg">
-                  {content[
-                    ""
-                  ]}
+                  {
+                    content[
+                      "about.hero.description"
+                    ]
+                  }
                 </p>
               )}
             </div>
@@ -176,29 +188,58 @@ export default function About() {
       {/* CONTENT */}
       <div className="mx-auto max-w-6xl px-4 py-16">
         <h1 className="mb-6 text-center text-4xl font-bold text-slate-900">
-          {content["about.intro.title"]}
+          {content[
+            "about.intro.title"
+          ]}
         </h1>
 
         <p className="mx-auto max-w-3xl text-center text-lg leading-relaxed text-gray-700">
-          {content[
-            "about.intro.description"
-          ]}
+          {
+            content[
+              "about.intro.description"
+            ]
+          }
         </p>
 
         <div className="mx-auto mt-12 max-w-4xl text-center">
           <p className="text-lg leading-relaxed text-gray-700">
-            {content[
-              "about.intro.description_2"
-            ]}
+            {
+              content[
+                "about.intro.description_2"
+              ]
+            }
           </p>
         </div>
 
-        {/* FOCAL AREAS */}
+       
+
+        {/* MISSION */}
+        <div className="mx-auto mt-20 max-w-4xl text-center">
+          <h2 className="mb-4 text-2xl font-semibold text-slate-900">
+            {
+              content[
+                "about.mission.title"
+              ]
+            }
+          </h2>
+
+          <p className="text-lg leading-relaxed text-gray-600">
+            {
+              content[
+                "about.mission.description"
+              ]
+            }
+          </p>
+        </div>
+
+         {/* FOCAL AREAS */}
         <div className="mx-auto mt-16 max-w-5xl">
           <h2 className="mb-6 text-center text-2xl font-bold text-slate-900">
-            {content[
-              "about.focal_areas.title"
-            ]}
+            {
+              content[
+                "about.focal_areas.title"
+              ]
+            }
           </h2>
 
           <div className="grid gap-6 sm:grid-cols-2">
@@ -212,24 +253,7 @@ export default function About() {
             ))}
           </div>
         </div>
-
-        {/* MISSION */}
-        <div className="mx-auto mt-20 max-w-4xl text-center">
-          <h2 className="mb-4 text-2xl font-semibold text-slate-900">
-            {content[
-              "about.mission.title"
-            ]}
-          </h2>
-
-          <p className="text-lg leading-relaxed text-gray-600">
-            {content[
-              "about.mission.description"
-            ]}
-          </p>
-        </div>
       </div>
     </section>
   );
 }
-
-

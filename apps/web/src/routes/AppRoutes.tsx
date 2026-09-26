@@ -1,4 +1,8 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+} from "react-router-dom";
 
 import Login from "../pages/auth/Login";
 
@@ -32,7 +36,7 @@ import AdminMedia from "../pages/admin/Media";
 import Contacts from "../pages/admin/Contacts";
 import Donations from "../pages/admin/Donations";
 import SiteContent from "../pages/admin/SiteContent";
-
+import Employees from "../pages/admin/Employees";
 
 export default function AppRoutes() {
   return (
@@ -84,13 +88,11 @@ export default function AppRoutes() {
           element={<Contact />}
         />
 
-        {/* Public donation page */}
         <Route
           path="/donations"
           element={<Donate />}
         />
 
-        {/* Public media page */}
         <Route
           path="/media"
           element={<PublicMedia />}
@@ -145,7 +147,6 @@ export default function AppRoutes() {
             element={<Testimonials />}
           />
 
-          {/* Admin media page */}
           <Route
             path="media"
             element={<AdminMedia />}
@@ -156,15 +157,19 @@ export default function AppRoutes() {
             element={<Contacts />}
           />
 
-          {/* Admin donation management */}
           <Route
             path="donations"
             element={<Donations />}
           />
 
-          <Route 
-            path="content" 
-            element={<SiteContent />} 
+          <Route
+            path="content"
+            element={<SiteContent />}
+          />
+
+          <Route
+            path="employees"
+            element={<Employees />}
           />
         </Route>
       </Route>

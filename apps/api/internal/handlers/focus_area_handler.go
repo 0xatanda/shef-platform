@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"strconv"
 
 	"github.com/0xatanda/shef-platform/internal/dto"
 	"github.com/0xatanda/shef-platform/internal/services"
@@ -274,17 +273,4 @@ func (h *FocusAreaHandler) GetBySlug(
 		"success": true,
 		"data":    item,
 	})
-}
-
-func parseInt(
-	value string,
-	fallback int,
-) int {
-	result, err := strconv.Atoi(value)
-
-	if err != nil {
-		return fallback
-	}
-
-	return result
 }
