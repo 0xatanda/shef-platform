@@ -3,11 +3,13 @@ package services
 import (
 	"context"
 	"errors"
+	"log"
 	"math"
 
 	"github.com/0xatanda/shef-platform/internal/dto"
 	"github.com/0xatanda/shef-platform/internal/models"
 	"github.com/0xatanda/shef-platform/internal/repositories"
+	"github.com/0xatanda/shef-platform/pkg/mailer"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -15,14 +17,16 @@ import (
 
 type ContactService struct {
 	contacts *repositories.ContactRepository
+	mailer   *mailer.Mailer
 }
 
 func NewContactService(
 	contactRepo *repositories.ContactRepository,
+	emailMailer *mailer.Mailer,
 ) *ContactService {
-
 	return &ContactService{
 		contacts: contactRepo,
+		mailer:   emailMailer,
 	}
 }
 
@@ -40,8 +44,45 @@ func (s *ContactService) CreateContact(
 		Status:  models.ContactUnread,
 	}
 
-	if err := s.contacts.Create(ctx, contact); err != nil {
+	/*
+	 * IMPORTANT:
+	 *
+	 * Save the contact first.
+	 *
+	 * This guarantees that a temporary SMTP/Gmail
+	 * failure cannot cause us to lose the visitor's
+	 * message.
+	 */
+	if err := s.contacts.Create(
+		ctx,
+		contact,
+	); err != nil {
 		return nil, err
+	}
+
+	/*
+	 * Email notification is secondary.
+	 *
+	 * If email fails, the contact still exists in
+	 * the database and remains available under:
+	 *
+	 * Admin → Contacts
+	 */
+	if s.mailer != nil {
+		if err := s.mailer.SendContactNotification(
+			contact.Name,
+			contact.Email,
+			contact.Phone,
+			contact.Subject,
+			contact.Message,
+		); err != nil {
+
+			log.Printf(
+				"CONTACT EMAIL NOTIFICATION FAILED contact_id=%s error=%v",
+				contact.ID.String(),
+				err,
+			)
+		}
 	}
 
 	return s.toResponse(contact), nil
@@ -57,10 +98,19 @@ func (s *ContactService) GetContact(
 		return nil, errors.New("invalid contact id")
 	}
 
-	contact, err := s.contacts.FindByID(ctx, contactID)
+	contact, err := s.contacts.FindByID(
+		ctx,
+		contactID,
+	)
+
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("contact not found")
+		if errors.Is(
+			err,
+			gorm.ErrRecordNotFound,
+		) {
+			return nil, errors.New(
+				"contact not found",
+			)
 		}
 
 		return nil, err
@@ -97,13 +147,24 @@ func (s *ContactService) ListContacts(
 		return nil, err
 	}
 
-	items := make([]dto.ContactResponse, 0, len(contacts))
+	items := make(
+		[]dto.ContactResponse,
+		0,
+		len(contacts),
+	)
 
 	for _, contact := range contacts {
-		items = append(items, *s.toResponse(&contact))
+		items = append(
+			items,
+			*s.toResponse(&contact),
+		)
 	}
 
-	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+	totalPages := int(
+		math.Ceil(
+			float64(total) / float64(limit),
+		),
+	)
 
 	return &dto.ContactListResponse{
 		Items: items,
@@ -123,19 +184,33 @@ func (s *ContactService) MarkAsRead(
 
 	contactID, err := uuid.Parse(id)
 	if err != nil {
-		return errors.New("invalid contact id")
+		return errors.New(
+			"invalid contact id",
+		)
 	}
 
-	_, err = s.contacts.FindByID(ctx, contactID)
+	_, err = s.contacts.FindByID(
+		ctx,
+		contactID,
+	)
+
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("contact not found")
+		if errors.Is(
+			err,
+			gorm.ErrRecordNotFound,
+		) {
+			return errors.New(
+				"contact not found",
+			)
 		}
 
 		return err
 	}
 
-	return s.contacts.MarkAsRead(ctx, contactID)
+	return s.contacts.MarkAsRead(
+		ctx,
+		contactID,
+	)
 }
 
 func (s *ContactService) DeleteContact(
@@ -145,19 +220,33 @@ func (s *ContactService) DeleteContact(
 
 	contactID, err := uuid.Parse(id)
 	if err != nil {
-		return errors.New("invalid contact id")
+		return errors.New(
+			"invalid contact id",
+		)
 	}
 
-	_, err = s.contacts.FindByID(ctx, contactID)
+	_, err = s.contacts.FindByID(
+		ctx,
+		contactID,
+	)
+
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("contact not found")
+		if errors.Is(
+			err,
+			gorm.ErrRecordNotFound,
+		) {
+			return errors.New(
+				"contact not found",
+			)
 		}
 
 		return err
 	}
 
-	return s.contacts.Delete(ctx, contactID)
+	return s.contacts.Delete(
+		ctx,
+		contactID,
+	)
 }
 
 func (s *ContactService) toResponse(

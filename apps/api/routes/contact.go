@@ -10,6 +10,7 @@ import (
 	"github.com/0xatanda/shef-platform/internal/services"
 	"github.com/0xatanda/shef-platform/pkg/auth"
 	"github.com/0xatanda/shef-platform/pkg/database"
+	"github.com/0xatanda/shef-platform/pkg/mailer"
 )
 
 func RegisterAdminContactRoutes(v1 fiber.Router) {
@@ -28,8 +29,13 @@ func RegisterAdminContactRoutes(v1 fiber.Router) {
 		database.DB,
 	)
 
+	contactMailer := mailer.NewFromEnv()
+
+	contactMailer.LogConfigurationWarning()
+
 	contactService := services.NewContactService(
 		contactRepo,
+		contactMailer,
 	)
 
 	contactHandler := handlers.NewContactHandler(

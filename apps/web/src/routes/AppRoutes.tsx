@@ -15,6 +15,7 @@ import AdminLayout from "../layouts/AdminLayout";
 // =========================
 import Home from "../pages/public/Home";
 import About from "../pages/public/About";
+import FocalAreaDetails from "../pages/public/FocalAreaDetails";
 import Projects from "../pages/public/Projects";
 import Publications from "../pages/public/Publications";
 import PublicationDetails from "../pages/public/PublicationDetails";
@@ -61,6 +62,11 @@ export default function AppRoutes() {
         <Route
           path="/about"
           element={<About />}
+        />
+
+        <Route
+          path="/about/focal-areas/:slug"
+          element={<FocalAreaDetails />}
         />
 
         <Route

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+
 import api from "../../api/client";
 
 interface SiteContent {
@@ -13,6 +15,23 @@ interface SiteContent {
 interface ContentResponse {
   success: boolean;
   data: SiteContent;
+}
+
+interface FocusArea {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  image_url: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface FocusAreaListResponse {
+  success: boolean;
+  data: FocusArea[];
 }
 
 const defaultContent: Record<string, string> = {
@@ -31,9 +50,6 @@ const defaultContent: Record<string, string> = {
 
   "about.focal_areas.title":
     "Our Focal Areas",
-
-  "about.focal_areas.items":
-    "Economic and Capacity Building Program\nPolicy and Advocacy Program\nCommunity Health and Environment Program\nHousing and Community Upgrade Program\nStorytelling for Impact (Know-Your-City TV)\nProfiling and Data Collection Program",
 
   "about.mission.title":
     "Our Mission",
@@ -70,17 +86,43 @@ async function getContent(
   }
 }
 
-function getFocalAreas(
-  content: Record<string, string>,
-): string[] {
-  const items =
-    content["about.focal_areas.items"] ||
-    "";
+async function getFocusAreas(): Promise<
+  FocusArea[]
+> {
+  try {
+    const response =
+      await api.get<FocusAreaListResponse>(
+        "/focus-areas",
+      );
 
-  return items
-    .split("\n")
-    .map((item) => item.trim())
-    .filter(Boolean);
+    if (
+      !response.data.success ||
+      !Array.isArray(response.data.data)
+    ) {
+      throw new Error(
+        "Invalid focus area response.",
+      );
+    }
+
+    return response.data.data
+      .filter(
+        (area) =>
+          area.is_active &&
+          Boolean(area.slug) &&
+          Boolean(area.title),
+      )
+      .sort(
+        (a, b) =>
+          a.sort_order - b.sort_order,
+      );
+  } catch (error: unknown) {
+    console.error(
+      "Failed to load Focus Areas:",
+      error,
+    );
+
+    return [];
+  }
 }
 
 export default function About() {
@@ -89,7 +131,10 @@ export default function About() {
       defaultContent,
     );
 
-  const [loading, setLoading] =
+  const [focusAreas, setFocusAreas] =
+    useState<FocusArea[]>([]);
+
+  const [loadingFocusAreas, setLoadingFocusAreas] =
     useState(true);
 
   useEffect(() => {
@@ -97,6 +142,9 @@ export default function About() {
       "About | Shantytown Empowerment Foundation";
   }, []);
 
+  /*
+   * Load About page CMS content.
+   */
   useEffect(() => {
     let cancelled = false;
 
@@ -123,10 +171,11 @@ export default function About() {
         }
 
         setContent(nextContent);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+      } catch (error) {
+        console.error(
+          "Failed to load About page content:",
+          error,
+        );
       }
     }
 
@@ -137,60 +186,61 @@ export default function About() {
     };
   }, []);
 
-  const focalAreas =
-    getFocalAreas(content);
+  /*
+   * Load Focus Areas from the database.
+   *
+   * The database Focus Area slug is used
+   * directly for the public page URL.
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadFocusAreas() {
+      try {
+        setLoadingFocusAreas(true);
+
+        const areas =
+          await getFocusAreas();
+
+        if (!cancelled) {
+          setFocusAreas(areas);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingFocusAreas(false);
+        }
+      }
+    }
+
+    void loadFocusAreas();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <section className="bg-white">
-      {/* HERO */}
-      <div className="mx-auto max-w-7xl px-4 pt-16">
+      {/* =========================
+          HERO IMAGE
+      ========================== */}
+      <div className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-xl">
           <img
             src="/hero/about-hero.jpg"
-            alt={
-              content[
-                "about.hero.description"
-              ] ||
-              "Community empowerment and organizing"
-            }
+            alt="Community empowerment and organizing"
             className="h-105 w-full object-cover"
           />
-
-          {/* Hero Overlay */}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/35">
-            <div className="px-6 text-center text-white">
-              <h1 className="text-4xl font-bold sm:text-5xl">
-                {loading
-                  ? defaultContent[
-                      "about.hero.title"
-                    ]
-                  : content[
-                      "about.hero.title"
-                    ]}
-              </h1>
-
-              {content[
-                "about.hero.description"
-              ] && (
-                <p className="mx-auto mt-3 max-w-2xl text-base sm:text-lg">
-                  {
-                    content[
-                      "about.hero.description"
-                    ]
-                  }
-                </p>
-              )}
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* CONTENT */}
-      <div className="mx-auto max-w-6xl px-4 py-16">
+      {/* =========================
+          CONTENT
+      ========================== */}
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+        {/* INTRODUCTION */}
         <h1 className="mb-6 text-center text-4xl font-bold text-slate-900">
-          {content[
-            "about.intro.title"
-          ]}
+          {content["about.intro.title"]}
         </h1>
 
         <p className="mx-auto max-w-3xl text-center text-lg leading-relaxed text-gray-700">
@@ -211,9 +261,9 @@ export default function About() {
           </p>
         </div>
 
-       
-
-        {/* MISSION */}
+        {/* =========================
+            MISSION
+        ========================== */}
         <div className="mx-auto mt-20 max-w-4xl text-center">
           <h2 className="mb-4 text-2xl font-semibold text-slate-900">
             {
@@ -232,7 +282,9 @@ export default function About() {
           </p>
         </div>
 
-         {/* FOCAL AREAS */}
+        {/* =========================
+            FOCAL AREAS
+        ========================== */}
         <div className="mx-auto mt-16 max-w-5xl">
           <h2 className="mb-6 text-center text-2xl font-bold text-slate-900">
             {
@@ -242,16 +294,41 @@ export default function About() {
             }
           </h2>
 
-          <div className="grid gap-6 sm:grid-cols-2">
-            {focalAreas.map((area) => (
-              <div
-                key={area}
-                className="rounded-lg bg-green-600 px-6 py-4 font-medium text-white transition hover:bg-green-700"
-              >
-                {area}
-              </div>
-            ))}
-          </div>
+          {loadingFocusAreas ? (
+            <div className="py-6 text-center text-sm text-gray-500">
+              Loading focal areas...
+            </div>
+          ) : focusAreas.length === 0 ? (
+            <div className="py-6 text-center text-sm text-gray-500">
+              No focal areas are currently
+              available.
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2">
+              {focusAreas.map((area) => (
+                <Link
+                  key={area.id}
+                  to={`/about/focal-areas/${encodeURIComponent(
+                    area.slug,
+                  )}`}
+                  className="group rounded-lg bg-green-600 px-6 py-5 font-medium text-white transition hover:bg-green-700"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <span>
+                      {area.title}
+                    </span>
+
+                    <span
+                      aria-hidden="true"
+                      className="text-xl transition-transform group-hover:translate-x-1"
+                    >
+                      →
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>
