@@ -36,7 +36,6 @@ func (r *UserRepository) FindByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*models.User, error) {
-
 	var user models.User
 
 	err := r.db.WithContext(ctx).
@@ -59,7 +58,6 @@ func (r *UserRepository) FindByEmail(
 	ctx context.Context,
 	email string,
 ) (*models.User, error) {
-
 	var user models.User
 
 	email = strings.TrimSpace(
@@ -107,7 +105,6 @@ func (r *UserRepository) UpdateLastLogin(
 	ctx context.Context,
 	id uuid.UUID,
 ) error {
-
 	now := time.Now()
 
 	return r.db.WithContext(ctx).
@@ -122,7 +119,6 @@ func (r *UserRepository) VerifyEmail(
 	ctx context.Context,
 	id uuid.UUID,
 ) error {
-
 	return r.db.WithContext(ctx).
 		Model(&models.User{}).
 		Where("id = ?", id).
@@ -136,11 +132,27 @@ func (r *UserRepository) UpdatePassword(
 	id uuid.UUID,
 	passwordHash string,
 ) error {
-
 	return r.db.WithContext(ctx).
 		Model(&models.User{}).
 		Where("id = ?", id).
 		Update("password_hash", passwordHash).
+		Error
+}
+
+// Update email.
+func (r *UserRepository) UpdateEmail(
+	ctx context.Context,
+	id uuid.UUID,
+	email string,
+) error {
+	email = strings.TrimSpace(
+		strings.ToLower(email),
+	)
+
+	return r.db.WithContext(ctx).
+		Model(&models.User{}).
+		Where("id = ?", id).
+		Update("email", email).
 		Error
 }
 
@@ -150,7 +162,6 @@ func (r *UserRepository) List(
 	page int,
 	limit int,
 ) ([]models.User, int64, error) {
-
 	var (
 		users []models.User
 		total int64
@@ -183,7 +194,6 @@ func (r *UserRepository) ChangeStatus(
 	id uuid.UUID,
 	active bool,
 ) error {
-
 	return r.db.WithContext(ctx).
 		Model(&models.User{}).
 		Where("id = ?", id).
@@ -196,7 +206,6 @@ func (r *UserRepository) ExistsByEmail(
 	ctx context.Context,
 	email string,
 ) (bool, error) {
-
 	var count int64
 
 	email = strings.TrimSpace(

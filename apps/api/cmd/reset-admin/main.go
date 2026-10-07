@@ -27,7 +27,11 @@ func main() {
 	// Connect to database
 	// ============================================================
 
-	database.Connect(cfg)
+	if err := database.Connect(cfg); err != nil {
+		fmt.Println("Unable to connect to database.")
+		fmt.Println("Database error:", err)
+		os.Exit(1)
+	}
 
 	ctx := context.Background()
 
@@ -35,15 +39,37 @@ func main() {
 		database.DB,
 	)
 
+	reader := bufio.NewReader(
+		os.Stdin,
+	)
+
+	// ============================================================
+	// Read current admin email
+	// ============================================================
+
+	fmt.Print("Enter current admin email: ")
+
+	currentEmail, err := reader.ReadString('\n')
+
+	if err != nil {
+		fmt.Println("Unable to read current admin email.")
+		os.Exit(1)
+	}
+
+	currentEmail = normalizeEmail(currentEmail)
+
+	if currentEmail == "" {
+		fmt.Println("Admin email cannot be empty.")
+		os.Exit(1)
+	}
+
 	// ============================================================
 	// Find admin account
 	// ============================================================
 
-	email := "admin@shef.org"
-
 	user, err := userRepo.FindByEmail(
 		ctx,
-		email,
+		currentEmail,
 	)
 
 	if err != nil {
@@ -51,19 +77,81 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Println()
 	fmt.Println("Admin account found.")
 	fmt.Println("ID:", user.ID)
-	fmt.Println("Email:", user.Email)
+	fmt.Println("Current email:", user.Email)
 	fmt.Println("Active:", user.IsActive)
 	fmt.Println("Role:", user.Role)
 
 	// ============================================================
-	// Read password
+	// Validate admin account
 	// ============================================================
 
-	reader := bufio.NewReader(
-		os.Stdin,
-	)
+	if !user.IsActive {
+		fmt.Println("This admin account is inactive.")
+		os.Exit(1)
+	}
+
+	// Both admin and super_admin accounts are allowed to use
+	// this command.
+	if user.Role != "admin" && user.Role != "super_admin" {
+		fmt.Println("The selected account does not have an administrative role.")
+		os.Exit(1)
+	}
+
+	// ============================================================
+	// Read new admin email
+	// ============================================================
+
+	fmt.Println()
+	fmt.Print("Enter new admin email: ")
+
+	newEmail, err := reader.ReadString('\n')
+
+	if err != nil {
+		fmt.Println("Unable to read new admin email.")
+		os.Exit(1)
+	}
+
+	newEmail = normalizeEmail(newEmail)
+
+	if newEmail == "" {
+		fmt.Println("New admin email cannot be empty.")
+		os.Exit(1)
+	}
+
+	// ============================================================
+	// Check whether the email is already in use
+	// ============================================================
+
+	emailChanged := newEmail != normalizeEmail(user.Email)
+
+	if emailChanged {
+		exists, err := userRepo.ExistsByEmail(
+			ctx,
+			newEmail,
+		)
+
+		if err != nil {
+			fmt.Println(
+				"Unable to check whether the new email already exists.",
+			)
+			fmt.Println("Database error:", err)
+			os.Exit(1)
+		}
+
+		if exists {
+			fmt.Println(
+				"The new email is already associated with another account.",
+			)
+			os.Exit(1)
+		}
+	}
+
+	// ============================================================
+	// Read new password
+	// ============================================================
 
 	fmt.Print("Enter new admin password: ")
 
@@ -130,7 +218,29 @@ func main() {
 	)
 
 	// ============================================================
-	// Save password hash
+	// Update email if changed
+	// ============================================================
+
+	if emailChanged {
+		if err := userRepo.UpdateEmail(
+			ctx,
+			user.ID,
+			newEmail,
+		); err != nil {
+			fmt.Println(
+				"Unable to update admin email.",
+			)
+			fmt.Println("Database error:", err)
+			os.Exit(1)
+		}
+
+		fmt.Println(
+			"Admin email updated successfully.",
+		)
+	}
+
+	// ============================================================
+	// Update password
 	// ============================================================
 
 	if err := userRepo.UpdatePassword(
@@ -139,14 +249,21 @@ func main() {
 		string(hash),
 	); err != nil {
 		fmt.Println(
-			"Unable to update password.",
+			"Unable to update admin password.",
 		)
 		fmt.Println("Database error:", err)
+
+		if emailChanged {
+			fmt.Println(
+				"WARNING: the admin email was changed, but the password update failed.",
+			)
+		}
+
 		os.Exit(1)
 	}
 
 	fmt.Println(
-		"Password hash written to database.",
+		"Admin password updated successfully.",
 	)
 
 	// ============================================================
@@ -155,19 +272,30 @@ func main() {
 
 	updatedUser, err := userRepo.FindByEmail(
 		ctx,
-		email,
+		newEmail,
 	)
 
 	if err != nil {
 		fmt.Println(
-			"Password was updated, but the user could not be reloaded.",
+			"Credentials were updated, but the user could not be reloaded.",
 		)
 		fmt.Println("Database error:", err)
 		os.Exit(1)
 	}
 
 	// ============================================================
-	// Verify the hash actually stored in PostgreSQL
+	// Verify stored email
+	// ============================================================
+
+	if normalizeEmail(updatedUser.Email) != newEmail {
+		fmt.Println(
+			"ERROR: the email stored in the database does not match the new email.",
+		)
+		os.Exit(1)
+	}
+
+	// ============================================================
+	// Verify stored password hash
 	// ============================================================
 
 	if err := bcrypt.CompareHashAndPassword(
@@ -189,7 +317,21 @@ func main() {
 	// Final confirmation
 	// ============================================================
 
-	fmt.Println(
-		"Admin password updated successfully.",
+	fmt.Println()
+	fmt.Println("========================================")
+	fmt.Println("Admin credentials updated successfully.")
+	fmt.Println("========================================")
+	fmt.Println("Login email:", updatedUser.Email)
+	fmt.Println("Account active:", updatedUser.IsActive)
+	fmt.Println("Role:", updatedUser.Role)
+	fmt.Println()
+	fmt.Println("The new password was NOT stored in this command output.")
+}
+
+// normalizeEmail ensures admin email values are stored and
+// compared consistently.
+func normalizeEmail(email string) string {
+	return strings.TrimSpace(
+		strings.ToLower(email),
 	)
 }

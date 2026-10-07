@@ -7,10 +7,14 @@ export default function Login() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -19,8 +23,13 @@ export default function Login() {
 
     setError("");
 
-    if (!email || !password) {
-      setError("Email and password are required.");
+    const normalizedEmail =
+      email.trim().toLowerCase();
+
+    if (!normalizedEmail || !password) {
+      setError(
+        "Email and password are required.",
+      );
       return;
     }
 
@@ -28,13 +37,14 @@ export default function Login() {
       setLoading(true);
 
       const result = await login({
-        email,
+        email: normalizedEmail,
         password,
       });
 
       if (!result.success) {
         setError(
-          result.message || "Login failed.",
+          result.message ||
+            "Login failed.",
         );
         return;
       }
@@ -45,12 +55,26 @@ export default function Login() {
       );
 
       localStorage.setItem(
-        "shef_user",
-        JSON.stringify(result.data.user),
+        "shef_refresh_token",
+        result.data.refresh_token,
       );
 
-      navigate("/admin/dashboard");
-    } catch {
+      localStorage.setItem(
+        "shef_user",
+        JSON.stringify(
+          result.data.user,
+        ),
+      );
+
+      navigate("/admin/dashboard", {
+        replace: true,
+      });
+    } catch (error) {
+      console.error(
+        "SHEF login error:",
+        error,
+      );
+
       setError(
         "Unable to login. Please check your credentials.",
       );
@@ -77,7 +101,8 @@ export default function Login() {
             </h1>
 
             <p className="text-gray-500 mt-2">
-              Sign in to manage the SHEF website.
+              Sign in to manage the SHEF
+              website.
             </p>
           </div>
 
@@ -100,10 +125,14 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(event) =>
-                  setEmail(event.target.value)
+                  setEmail(
+                    event.target.value,
+                  )
                 }
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600"
                 placeholder="admin@shef.org"
+                autoComplete="email"
+                disabled={loading}
               />
             </div>
 
@@ -116,10 +145,14 @@ export default function Login() {
                 type="password"
                 value={password}
                 onChange={(event) =>
-                  setPassword(event.target.value)
+                  setPassword(
+                    event.target.value,
+                  )
                 }
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600"
                 placeholder="••••••••"
+                autoComplete="current-password"
+                disabled={loading}
               />
             </div>
 

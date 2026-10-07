@@ -9,7 +9,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
-	"github.com/0xatanda/shef-platform/internal/dto"
 	"github.com/0xatanda/shef-platform/internal/services"
 	"github.com/0xatanda/shef-platform/internal/validators"
 	"github.com/0xatanda/shef-platform/pkg/response"
@@ -63,8 +62,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	)
 
 	if err != nil {
-		// IMPORTANT:
-		// Do not log the password or password hash.
+		// Never log the password or password hash.
 		log.Printf(
 			"AUTH LOGIN FAILED email=%q ip=%q error=%v",
 			req.Email,
@@ -90,9 +88,6 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 			)
 
 		default:
-			// During development, return a generic server
-			// error instead of incorrectly reporting a
-			// database/session/JWT problem as a password error.
 			return response.Error(
 				c,
 				fiber.StatusInternalServerError,
@@ -331,11 +326,43 @@ func (h *AuthHandler) ChangePassword(c *fiber.Ctx) error {
 		)
 
 		switch {
-		case errors.Is(err, services.ErrInvalidCredentials):
+		case errors.Is(err, services.ErrPasswordMismatch):
 			return response.Error(
 				c,
 				fiber.StatusUnauthorized,
 				"Current password is incorrect",
+				nil,
+			)
+
+		case errors.Is(err, services.ErrSamePassword):
+			return response.Error(
+				c,
+				fiber.StatusBadRequest,
+				"New password must be different from current password",
+				nil,
+			)
+
+		case errors.Is(err, services.ErrWeakPassword):
+			return response.Error(
+				c,
+				fiber.StatusBadRequest,
+				"Password must be between 12 and 100 characters",
+				nil,
+			)
+
+		case errors.Is(err, services.ErrUserNotFound):
+			return response.Error(
+				c,
+				fiber.StatusUnauthorized,
+				"Unauthorized",
+				nil,
+			)
+
+		case errors.Is(err, services.ErrInactiveAccount):
+			return response.Error(
+				c,
+				fiber.StatusForbidden,
+				"Account is inactive",
 				nil,
 			)
 
@@ -401,12 +428,9 @@ func (h *AuthHandler) ForgotPassword(c *fiber.Ctx) error {
 		)
 	}
 
-	// The token is currently returned by the service so
-	// the application layer can eventually hand it to
-	// an email service.
-	//
-	// Do not expose this token in the public HTTP response
-	// in production.
+	// The token is intentionally not exposed through the
+	// public HTTP response. It will eventually be delivered
+	// through the application's email service.
 	_ = token
 
 	return response.Success(
@@ -461,7 +485,3 @@ func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
 		nil,
 	)
 }
-
-// Prevent unused import problems if dto is not currently
-// referenced elsewhere in this handler file.
-var _ dto.LoginResponse
