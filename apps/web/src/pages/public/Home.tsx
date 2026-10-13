@@ -728,85 +728,77 @@ export default function Home() {
               Our partners will appear here.
             </div>
           ) : (
-            <motion.div
-              className="mt-12 grid grid-cols-2 items-center gap-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={{
-                hidden: {},
-                visible: {
-                  transition: {
-                    staggerChildren: 0.12,
-                  },
-                },
-              }}
-            >
-              {partners.map((partner) => {
-                const logoUrl =
-                  resolveImageUrl(
-                    partner.logo,
-                  );
+            
+              <motion.div
+                className="mt-12 overflow-hidden"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+              >
+                <motion.div
+                  className="flex w-max"
+                  animate={{ x: ["0%", "-50%"] }}
+                  transition={{
+                    duration: Math.max(partners.length * 4, 20),
+                    ease: "linear",
+                    repeat: Infinity,
+                    repeatType: "loop",
+                  }}
+                >
+                  {[0, 1].map((group) => (
+                    <div
+                      key={group}
+                      className="flex shrink-0 items-center gap-8 pr-8"
+                      aria-hidden={group === 1 ? true : undefined}
+                    >
+                      {partners.map((partner) => {
+                        const logoUrl = resolveImageUrl(partner.logo);
 
-                const logo = (
-                  <div className="flex h-32 w-full items-center justify-center rounded-xl border border-gray-100 bg-white p-5 transition hover:-translate-y-1 hover:shadow-md">
-                    {logoUrl ? (
-                      <img
-                        src={logoUrl}
-                        alt={
-                          partner.name ||
-                          "SHEF partner"
-                        }
-                        className="max-h-24 max-w-full object-contain"
-                      />
-                    ) : (
-                      <span className="text-center text-sm font-semibold text-gray-700">
-                        {partner.name}
-                      </span>
-                    )}
-                  </div>
-                );
+                        const logo = (
+                          <div className="flex h-28 w-40 shrink-0 items-center justify-center rounded-xl border border-gray-100 bg-white p-5 transition hover:-translate-y-1 hover:shadow-md sm:h-32 sm:w-48">
+                            {logoUrl ? (
+                              <img
+                                src={logoUrl}
+                                alt={partner.name || "SHEF partner"}
+                                className="max-h-24 max-w-full object-contain"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <span className="text-center text-sm font-semibold text-gray-700">
+                                {partner.name}
+                              </span>
+                            )}
+                          </div>
+                        );
 
-                return (
-                  <motion.div
-                    key={partner.id}
-                    variants={{
-                      hidden: {
-                        opacity: 0,
-                        y: 20,
-                      },
-                      visible: {
-                        opacity: 1,
-                        y: 0,
-                      },
-                    }}
-                    transition={{
-                      duration: 0.5,
-                      ease: "easeOut",
-                    }}
-                  >
-                    {partner.website ? (
-                      <a
-                        href={
-                          partner.website
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={
-                          partner.name
-                        }
-                        title={partner.name}
-                        className="block"
-                      >
-                        {logo}
-                      </a>
-                    ) : (
-                      logo
-                    )}
-                  </motion.div>
-                );
-              })}
-            </motion.div>
+                        return (
+                          <div
+                            key={`${group}-${partner.id}`}
+                            className="shrink-0"
+                          >
+                            {partner.website ? (
+                              <a
+                                href={partner.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={partner.name}
+                                title={partner.name}
+                                className="block"
+                                tabIndex={group === 1 ? -1 : undefined}
+                              >
+                                {logo}
+                              </a>
+                            ) : (
+                              logo
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </motion.div>
+              </motion.div>
+
           )}
         </div>
       </section>
