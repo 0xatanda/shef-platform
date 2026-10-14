@@ -662,7 +662,7 @@ export default function Home() {
       </section>
 
       {/* FEATURED YOUTUBE VIDEOS */}
-      {/* <section className="bg-white py-20">
+      <section className="bg-white py-20">
         <div className="mx-auto max-w-7xl px-4">
           <div className="flex items-end justify-between gap-6">
             <div>
@@ -702,7 +702,7 @@ export default function Home() {
             )}
           </a>
         </div>
-      </section> */}
+      </section>
 
       {/* PARTNERS */}
       <section className="bg-white py-20">
